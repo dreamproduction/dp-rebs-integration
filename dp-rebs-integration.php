@@ -82,24 +82,34 @@ class DP_REBS extends DP_Plugin {
 	}
 
 	function save_data() {
-		//var_dump( $this->api_data['objects'] );
-
 		foreach( $this->api_data['objects'] as $index => $object_data ) {
 			$this->data[$index] = $this->map_fields( $object_data );
 		}
 
-	/*	$c = $pid = 0;
+		$c = $pid = 0;
 		foreach ( $this->data as $property_data ) {
-			var_dump( $property_data['post'] );
-
 			if ( $c < 1 )
-				$pid = wp_insert_post( $property_data['post'] );
+				$this->save_or_update( $property_data );
 			$c++;
 		}
+	}
 
-		var_dump( $pid );*/
+	function save_or_update( $data ) {
+		$exists = get_posts(
+			array(
+				'post_type' => 'property',
+			    'suppress_filters' => false,
+			    'meta_key' => 'estate_property_id',
+			    'meta_value' => $data['post']['post_name'],
+			    'posts_per_page' => 1
+			)
+		);
 
-	//	edit_post_link( $pid );
+		if ( $exists ) {
+			$data['post']['ID'] = $exists[0]->ID;
+		}
+
+		$id = wp_insert_post( $data['post'] );
 	}
 
 	static function set_cron() {
