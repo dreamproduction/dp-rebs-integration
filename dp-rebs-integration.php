@@ -27,7 +27,9 @@ class DP_REBS extends DP_Plugin {
 
 		// set cron via activation
 		// set cron action
-		add_action( 'init', array( $this, 'update_from_api' ) );
+//		add_action( 'init', array( $this, 'update_from_api' ) );
+		add_action( 'admin_bar_menu', array( $this, 'menu_buttons' ) );
+		add_action( 'init', array( $this, 'handle_menu_actions' ) );
 
 				// get last modified
 			// do request
@@ -42,6 +44,61 @@ class DP_REBS extends DP_Plugin {
 	//	var_dump( json_decode($str) );
 	}
 
+	function menu_buttons( $wp_admin_bar ) {
+		// Template name
+		$wp_admin_bar->add_node(
+			array(
+				'id'		=> $this->name( 'update' ),
+				'title'		=> __( 'REBS: Update all', 'dp' ),
+				'href'		=> add_query_arg( $this->name( 'update' ), 'everything', admin_url( 'index.php' ) ),
+			)
+		);
+
+		if ( is_singular( 'property' ) ) {
+			$wp_admin_bar->add_node(
+				array(
+					'id'		=> $this->name( 'update' ),
+					'title'		=> __( 'REBS: Update this', 'dp' ),
+					'href'		=> add_query_arg( $this->name( 'update' ), get_the_ID(), $this->get_current_url() ),
+				)
+			);
+		}
+
+		if ( is_admin() ) {
+			$screen = get_current_screen();
+			if ( $screen->base == 'post'  && $screen->post_type == 'property' ) {
+				$wp_admin_bar->add_node(
+					array(
+						'id'		=> $this->name( 'update' ),
+						'title'		=> __( 'REBS: Update this', 'dp' ),
+						'href'		=> add_query_arg( $this->name( 'update' ), get_the_ID(), get_edit_post_link( get_the_ID() ) ),
+					)
+				);
+			}
+		}
+
+	}
+
+	function handle_menu_actions() {
+		if ( ! isset( $_GET[ $this->name('update') ] ) )
+			return;
+
+		$what = $_GET[ $this->name('update') ];
+
+		if ( $what == 'everything' ) {
+			$this->get_data();
+			$this->save_data();
+		}
+
+		if ( is_numeric($what) ) {
+
+			$property_id = get_post_meta( $what, 'estate_property_id', true );
+
+			$this->get_data( 'single', $property_id );
+			$this->save_data( 'single' );
+		}
+	}
+
 	function update_from_api() {
 		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
 
@@ -50,25 +107,40 @@ class DP_REBS extends DP_Plugin {
 		$this->get_data();
 		$this->save_data();
 
-		//var_dump( $this->data );
-
 		update_option( $this->name( 'last_modified' ), $this->last_modified );
 	}
 
-	function get_data() {
-		$url = add_query_arg(
-			array(
-				'format' => 'json',
-				'date_modified_by_user__gte' => $this->last_modified
-			),
-			$this->api_url
-		);
+	function get_url( $mode = 'global', $id = 0 ) {
 
+		switch ( $mode ) {
+			case 'single' :
+				$url =  trailingslashit( $this->api_url . '/' . $id );
+				add_query_arg(
+					array(
+						'format' => 'json',
+					),
+					$url
+				);
+				break;
+			default :
+				$url = add_query_arg(
+					array(
+						'format' => 'json',
+						'date_modified_by_user__gte' => $this->last_modified
+					),
+					$this->api_url
+				);
+				break;
+		}
 
+		return $url;
+	}
+
+	function get_data( $mode = 'global', $id = 0 ) {
+
+		$url = $this->get_url( $mode, $id );
 
 		$response = wp_remote_get( $url );
-
-
 
 		if ( ! is_wp_error( $response ) ) {
 			if ( $response['response']['code'] == 200 ) {
@@ -78,23 +150,32 @@ class DP_REBS extends DP_Plugin {
 			}
 		}
 
+		var_dump( $mode, $id );
 
+		return $this->api_data;
 	}
 
-	function save_data() {
-		foreach( $this->api_data['objects'] as $index => $object_data ) {
-			$this->data[$index] = $this->map_fields( $object_data );
-		}
+	function save_data( $mode = 'global'  ) {
+		$this->setup_data( $mode );
 
-		$c = $pid = 0;
 		foreach ( $this->data as $property_data ) {
-			if ( $c < 1 )
-				$this->save_or_update( $property_data );
-			$c++;
+			$this->save_or_update( $property_data );
+		}
+	}
+
+	function setup_data( $mode = 'global' ) {
+		if ( $mode == 'single' ) {
+			$this->data[] = $this->map_fields( $this->api_data );
+
+		} else {
+			foreach( $this->api_data['objects'] as $index => $object_data ) {
+				$this->data[$index] = $this->map_fields( $object_data );
+			}
 		}
 	}
 
 	function save_or_update( $data ) {
+
 		$exists = get_posts(
 			array(
 				'post_type' => 'property',
@@ -110,6 +191,14 @@ class DP_REBS extends DP_Plugin {
 		}
 
 		$id = wp_insert_post( $data['post'] );
+
+		foreach ( $data['taxonomy'] as $taxonomy => $terms ) {
+			wp_set_object_terms( $id, $terms, $taxonomy );
+		}
+
+		foreach ( $data['meta'] as $key => $meta_value ) {
+			update_post_meta( $id, $key, $meta_value );
+		}
 	}
 
 	static function set_cron() {
@@ -122,26 +211,6 @@ class DP_REBS extends DP_Plugin {
 
 	function property_save( $data ) {
 
-	}
-
-	function prepare_data( $data, $update = true ) {
-		global $wpdb;
-
-		$table = _get_meta_table( 'post' );
-		if ( ! $table ) {
-			return false;
-		}
-
-		$id = 0;
-
-		foreach ( $data as $key => $value ) {
-			if ( $update ) {
-				$query_data[] = $wpdb->prepare( "UPDATE {$table} SET meta_value = %s WHERE post_id = %d AND meta_key = %s;", $value, $id, $key );
-			} else {
-
-			}
-		}
-		return '';
 	}
 
 	/**
@@ -158,16 +227,19 @@ class DP_REBS extends DP_Plugin {
 
 			switch ( $key ) {
 				case 'for_rent' :
-					$return['post']['tax_input']['property-status'][] = 'rent';
+					$return['taxonomy']['property-status'][] = 'rent';
 					break;
 				case 'for_sale' :
-					$return['post']['tax_input']['property-status'][] = 'sale';
+					$return['taxonomy']['property-status'][] = 'sale';
 					break;
 				case 'city':
-					$return['post']['tax_input']['property-location'][] = 'sale';
+					$return['taxonomy']['property-location'][] = $value;
+					break;
+				case 'region':
+					$return['taxonomy']['property-location'][] = $value;
 					break;
 				case 'property_type':
-					$return['post']['tax_input']['property-type'] = $this->get_property_type( $value );
+					$return['taxonomy']['property-type'] = $this->get_property_type( $value );
 					break;
 				case 'title':
 					$return['post']['post_title'] = $value;
@@ -177,6 +249,10 @@ class DP_REBS extends DP_Plugin {
 					break;
 				case 'id':
 					$return['post']['post_name'] = (string) $value;
+					$return['meta']['estate_property_id'] = (string) $value;
+					break;
+				case 'price_sale' :
+					$return['meta']['estate_property_price'] = (string) $value;
 					break;
 				case 'date_added':
 					$return['post']['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
@@ -221,19 +297,24 @@ class DP_REBS extends DP_Plugin {
 				case 'thumbnail' :
 				case 'lat' :
 				case 'lng' :
+				case 'street' :
+				case 'zone' :
 				// handled differently or not needed
 				break;
 				default:
-					$return['meta'][$key] = (string) $value;
+					$return['meta'][ 'estate_property_' . $key] = (string) $value;
 			}
 		}
 
 
 		$return['post']['post_type'] = 'property';
+		$return['post']['post_status'] = 'publish';
 
 		if ( $data['lat'] && $data['lng'] ) {
-			$return['meta']['location'] = sprintf( '%s,%s', $data['lat'], $data['lng'] );
+			$return['meta']['estate_property_location'] = sprintf( '%s,%s', $data['lat'], $data['lng'] );
 		}
+		$return['meta']['estate_property_address'] = implode( ', ', array( $data['street'], $data['zone'], $data['city'] ) );
+
 
 		return $return;
 	}
