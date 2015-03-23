@@ -374,30 +374,33 @@ class DP_REBS extends DP_Plugin {
 			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 		if ( ! function_exists( 'media_handle_sideload' ) )
 			require_once( ABSPATH . 'wp-admin/includes/media.php' );
+		if ( ! function_exists( 'wp_read_image_metadata' ) )
+			require_once( ABSPATH . 'wp-admin/includes/image.php' );
 
-		if ( ! empty($file) && $this->is_external_file( $file ) ) {
-			// Download file to temp location
-			$tmp = download_url( $file );
+		if ( ! empty($file) && $this->is_valid_image( $file ) ) {
+
+			$file_array = array();
 
 			// Set variables for storage
 			// fix file filename for query strings
 			preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $file, $matches);
 			$file_array['name'] = basename($matches[0]);
-			$file_array['tmp_name'] = $tmp;
+
+			if ( $id = $this->file_imported( $file_array['name'] ) )
+				return $id;
+
+			// Download file to temp location
+			$file_array['tmp_name'] = download_url( $file );
 
 			// If error storing temporarily, unlink
-			if ( is_wp_error( $tmp ) ) {
+			if ( is_wp_error( $file_array['tmp_name'] ) ) {
 				@unlink($file_array['tmp_name']);
 				$file_array['tmp_name'] = '';
 				return false;
 			}
 
-			if ( $id = $this->file_imported( $file_array['name'] ) )
-				return $id;
-
-			$desc = $file_array['name'];
 			// do the validation and storage stuff
-			$id = media_handle_sideload( $file_array, $post_id, $desc );
+			$id = media_handle_sideload( $file_array, $post_id, $file_array['name'] );
 			// If error storing permanently, unlink
 			if ( is_wp_error($id) ) {
 				@unlink($file_array['tmp_name']);
@@ -410,17 +413,13 @@ class DP_REBS extends DP_Plugin {
 		return false;
 	}
 
-	function is_external_file( $file ) {
+	function is_valid_image( $file ) {
 
 		$allowed = array( '.jpg' , '.png', '.bmp' , '.gif' );
 
 		$ext = substr( $file , -4 );
 
-		if ( in_array( strtolower($ext) , $allowed ) )
-			return true;
-
-		return false;
-
+		return in_array( strtolower($ext) , $allowed );
 	}
 
 	/**
