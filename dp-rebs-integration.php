@@ -178,9 +178,6 @@ class DP_REBS extends DP_Plugin {
 
 	function save_or_update( $data ) {
 
-		require_once( ABSPATH . 'wp-admin/includes/file.php' );
-		require_once( ABSPATH . 'wp-admin/includes/media.php' );
-
 		$exists = get_posts(
 			array(
 				'post_type' => 'property',
@@ -372,6 +369,11 @@ class DP_REBS extends DP_Plugin {
 	 * @return string - just the image url on success, false on failure
      */
 	function external_image_sideload( $file , $post_id ) {
+
+		if ( ! function_exists( 'download_url' ) )
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+		if ( ! function_exists( 'media_handle_sideload' ) )
+			require_once( ABSPATH . 'wp-admin/includes/media.php' );
 
 		if ( ! empty($file) && $this->is_external_file( $file ) ) {
 			// Download file to temp location
