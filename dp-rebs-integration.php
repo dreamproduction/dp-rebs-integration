@@ -265,6 +265,27 @@ class DP_REBS extends DP_Plugin {
 				case 'surface_built' :
 					$return['meta']['estate_property_size'] = (string) $value;
 					break;
+				case 'partitioning' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'apartment_type' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'building_structure' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'comfort' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'construction_status' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'floor' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
+				case 'house_type' :
+					$return['meta']['estate_property_' . $key] = $this->{'get_meta_' . $key}();
+					break;
 				case 'date_added':
 					$return['post']['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
@@ -356,6 +377,228 @@ class DP_REBS extends DP_Plugin {
 				break;
 		}
 
+		return $return;
+	}
+
+	function get_meta_partitioning( $value ) {
+		switch ( $value ) {
+			case 1:
+				$return = 'Detached';
+				break;
+			case 2:
+				$return = 'Semi-detached';
+				break;
+			case 3:
+				$return = 'Un-detached';
+				break;
+			case 4:
+				$return = 'Circular';
+				break;
+			case 5:
+				$return = 'Wagon';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+
+		return $return;
+	}
+
+	function get_meta_apartment_type( $value ) {
+		switch ( $value ) {
+			case 1:
+				$return = 'Studio';
+				break;
+			case 2:
+				$return = 'Penthouse';
+				break;
+			case 5:
+				$return = 'Duplex';
+				break;
+			case 6:
+				$return = 'Apartment';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+
+		return $return;
+	}
+
+	function get_meta_building_structure( $value ) {
+		switch ( $value ) {
+			case 2:
+				$return = 'Brick';
+				break;
+			case 3:
+				$return = 'ACB';
+				break;
+			case 4:
+				$return = 'Wood';
+				break;
+			case 5:
+				$return = 'Metal';
+				break;
+			case 6:
+				$return = 'Other';
+				break;
+			case 7:
+				$return = 'Frame';
+				break;
+			case 8:
+				$return = 'Prefabricated';
+				break;
+			case 9:
+				$return = 'Monolith';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+		return $return;
+	}
+
+	function get_meta_comfort( $value ) {
+		switch ( $value ) {
+			case 1:
+				$return = '1';
+				break;
+			case 2:
+				$return = '2';
+				break;
+			case 3:
+				$return = '3';
+				break;
+			case 4:
+				$return = 'Luxury';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+		return $return;
+	}
+
+	function get_meta_construction_status( $value ) {
+		switch ( $value ) {
+			case 1:
+				$return = 'Completed';
+				break;
+			case 2:
+				$return = 'Finishings completed';
+				break;
+			case 3:
+				$return = 'In construction';
+				break;
+			case 4:
+				$return = 'Unfinished';
+				break;
+			case 5:
+				$return = 'Requires renovation';
+				break;
+			case 6:
+				$return = 'Requires demolition';
+				break;
+			case 7:
+				$return = 'Structure';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+		return $return;
+	}
+
+	function get_meta_floor($value) {
+		switch ($value) {
+
+			case 1:
+				$return = 'Semi-basement';
+				break;
+			case 2:
+				$return = 'Ground floor';
+				break;
+			case 102:
+				$return = 'Mezzanine';
+				break;
+			case 3:
+				$return = '1';
+				break;
+			case 4:
+				$return = '2';
+				break;
+			case 5:
+				$return = '3';
+				break;
+			case 6:
+				$return = '4';
+				break;
+			case 7:
+				$return = '5';
+				break;
+			case 8:
+				$return = '6';
+				break;
+			case 9:
+				$return = '7';
+				break;
+			case 10:
+				$return = '8';
+				break;
+			case 11:
+				$return = '9';
+				break;
+			case 12:
+				$return = '10';
+				break;
+			case 13:
+				$return = '11';
+				break;
+			case 14:
+				$return = '12';
+				break;
+			case 15:
+				$return = '13';
+				break;
+			case 16:
+				$return = '14';
+				break;
+			case 17:
+				$return = '15';
+				break;
+			case 18:
+				$return = '16';
+				break;
+			case 100:
+				$return = 'Loft';
+				break;
+			case 101:
+				$return = 'Last 2 floors';
+				break;
+			default:
+				$return = '';
+				break;
+		}
+		return $return;
+	}
+
+	function get_meta_house_type( $value ) {
+		switch ( $value ) {
+			case 1:
+				$return = 'Individual';
+				break;
+			case 2:
+				$return = 'Narrow lot';
+				break;
+			case 3:
+				$return = 'Duplex';
+				break;
+			default:
+				$return = '';
+				break;
+		}
 		return $return;
 	}
 
