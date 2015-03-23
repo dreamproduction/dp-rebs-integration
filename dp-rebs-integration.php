@@ -30,6 +30,7 @@ class DP_REBS extends DP_Plugin {
 //		add_action( 'init', array( $this, 'update_from_api' ) );
 		add_action( 'admin_bar_menu', array( $this, 'menu_buttons' ) );
 		add_action( 'init', array( $this, 'handle_menu_actions' ) );
+		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
 
 				// get last modified
 			// do request
@@ -40,8 +41,10 @@ class DP_REBS extends DP_Plugin {
 		// verify data
 
 		// crud if the case
+	}
 
-	//	var_dump( json_decode($str) );
+	function property_meta() {
+		add_post_type_support( 'property', 'custom-fields' );
 	}
 
 	function menu_buttons( $wp_admin_bar ) {
@@ -80,6 +83,8 @@ class DP_REBS extends DP_Plugin {
 	}
 
 	function handle_menu_actions() {
+
+
 		if ( ! isset( $_GET[ $this->name('update') ] ) )
 			return;
 
@@ -101,8 +106,6 @@ class DP_REBS extends DP_Plugin {
 
 	function update_from_api() {
 		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
-
-		var_dump($this->last_modified);
 
 		$this->get_data();
 		$this->save_data();
@@ -144,7 +147,6 @@ class DP_REBS extends DP_Plugin {
 
 		if ( ! is_wp_error( $response ) ) {
 			if ( $response['response']['code'] == 200 ) {
-				//var_dump( $response );
 				$this->api_data = json_decode( $response['body'], true );
 
 			}
@@ -176,6 +178,9 @@ class DP_REBS extends DP_Plugin {
 
 	function save_or_update( $data ) {
 
+		require_once( ABSPATH . 'wp-admin/includes/file.php' );
+		require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
 		$exists = get_posts(
 			array(
 				'post_type' => 'property',
@@ -198,6 +203,12 @@ class DP_REBS extends DP_Plugin {
 
 		foreach ( $data['meta'] as $key => $meta_value ) {
 			update_post_meta( $id, $key, $meta_value );
+		}
+
+		foreach ( $data['images'] as $image ) {
+			$image_id = $this->external_image_sideload( $image, $id );
+			if ( $image_id )
+				add_post_meta( $id, 'estate_property_images', $image_id, false );
 		}
 	}
 
@@ -254,6 +265,9 @@ class DP_REBS extends DP_Plugin {
 				case 'price_sale' :
 					$return['meta']['estate_property_price'] = (string) $value;
 					break;
+				case 'surface_built' :
+					$return['meta']['estate_property_size'] = (string) $value;
+					break;
 				case 'date_added':
 					$return['post']['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
@@ -309,6 +323,8 @@ class DP_REBS extends DP_Plugin {
 
 		$return['post']['post_type'] = 'property';
 		$return['post']['post_status'] = 'publish';
+		$return['meta']['estate_property_size_unit'] = 'mp';
+
 
 		if ( $data['lat'] && $data['lng'] ) {
 			$return['meta']['estate_property_location'] = sprintf( '%s,%s', $data['lat'], $data['lng'] );
@@ -345,6 +361,79 @@ class DP_REBS extends DP_Plugin {
 
 		return $return;
 	}
+
+	/**
+     * Handle importing of external image.
+     * Most of this taken from WordPress function 'media_sideload_image'.
+	 *
+     * @param string $file The URL of the image to download
+     * @param int $post_id The post ID the media is to be associated with
+     *
+	 * @return string - just the image url on success, false on failure
+     */
+	function external_image_sideload( $file , $post_id ) {
+
+		if ( ! empty($file) && $this->is_external_file( $file ) ) {
+			// Download file to temp location
+			$tmp = download_url( $file );
+
+			// Set variables for storage
+			// fix file filename for query strings
+			preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $file, $matches);
+			$file_array['name'] = basename($matches[0]);
+			$file_array['tmp_name'] = $tmp;
+
+			// If error storing temporarily, unlink
+			if ( is_wp_error( $tmp ) ) {
+				@unlink($file_array['tmp_name']);
+				$file_array['tmp_name'] = '';
+				return false;
+			}
+
+			if ( $id = $this->file_imported( $file_array['name'] ) )
+				return $id;
+
+			$desc = $file_array['name'];
+			// do the validation and storage stuff
+			$id = media_handle_sideload( $file_array, $post_id, $desc );
+			// If error storing permanently, unlink
+			if ( is_wp_error($id) ) {
+				@unlink($file_array['tmp_name']);
+				return false;
+			}
+
+			return $id;
+		}
+
+		return false;
+	}
+
+	function is_external_file( $file ) {
+
+		$allowed = array( '.jpg' , '.png', '.bmp' , '.gif' );
+
+		$ext = substr( $file , -4 );
+
+		if ( in_array( strtolower($ext) , $allowed ) )
+			return true;
+
+		return false;
+
+	}
+
+	/**
+	 * Retrieve a post given its title.
+	 *
+	 * @param string $filename Page title
+	 * @global wpdb $wpdb       WordPress Database Access Abstraction Object
+	 *
+	 * @return mixed
+	 */
+	function file_imported( $filename ) {
+		global $wpdb;
+		return  $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type='attachment'", $filename ));
+	}
+
 }
 
 
