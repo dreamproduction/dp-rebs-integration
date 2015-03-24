@@ -195,10 +195,22 @@ class DP_REBS extends DP_Plugin {
 		$id = wp_insert_post( $data['post'] );
 
 		foreach ( $data['taxonomy'] as $taxonomy => $terms ) {
-			if ( $taxonomy == 'property-features' )
-				print_r( $terms );
-			else
+			if ( $taxonomy == 'property-features' ) {
+				// $terms should be an array of arrays
+				if ( is_array( $terms )) {
+					foreach ( $terms as $parent => $term_array ) {
+						if ( !$term_info = term_exists($parent, $taxonomy) ) {
+							wp_insert_term( $parent, $taxonomy);
+						}
+						wp_set_object_terms( $id, $parent, $taxonomy );
+						wp_set_object_terms( $id, $term_array, $taxonomy );
+					}
+
+				}
+
+ 			} else {
 				wp_set_object_terms( $id, $terms, $taxonomy );
+			}
 		}
 
 		foreach ( $data['meta'] as $key => $meta_value ) {
