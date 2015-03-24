@@ -195,7 +195,10 @@ class DP_REBS extends DP_Plugin {
 		$id = wp_insert_post( $data['post'] );
 
 		foreach ( $data['taxonomy'] as $taxonomy => $terms ) {
-			wp_set_object_terms( $id, $terms, $taxonomy );
+			if ( $taxonomy == 'property-features' )
+				print_r( $terms );
+			else
+				wp_set_object_terms( $id, $terms, $taxonomy );
 		}
 
 		foreach ( $data['meta'] as $key => $meta_value ) {
@@ -248,6 +251,9 @@ class DP_REBS extends DP_Plugin {
 					break;
 				case 'property_type':
 					$return['taxonomy']['property-type'] = $this->get_property_type( $value );
+					break;
+				case 'tags_en' :
+					$return['taxonomy']['property-features'] = $value;
 					break;
 				case 'title':
 					$return['post']['post_title'] = $value;
@@ -319,7 +325,7 @@ class DP_REBS extends DP_Plugin {
 				case 'verbose_floor' :
 				case 'verbose_price' :
 				case 'tags' :
-				case 'tags_en' :
+
 				case 'agent' :
 				case 'residential_complex' :
 				case 'sketches' :
