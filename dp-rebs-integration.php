@@ -198,13 +198,15 @@ class DP_REBS extends DP_Plugin {
 			if ( $taxonomy == 'property-features' ) {
 				// $terms should be an array of arrays
 				if ( is_array( $terms )) {
+					$to_insert = array();
 					foreach ( $terms as $parent => $term_array ) {
 						$term_to_insert = $parent;
 						if ( !$term_info = term_exists($parent, $taxonomy) ) {
 							$result = wp_insert_term( $parent, $taxonomy);
 							$term_info = $term_to_insert = $result['term_id'];
 						}
-						wp_set_object_terms( $id, $term_to_insert, $taxonomy );
+						$to_insert[] = $term_to_insert;
+
 						foreach ( $term_array as $term ) {
 							$term_to_insert = $term;
 							if ( ! term_exists($term, $taxonomy) ) {
@@ -212,11 +214,12 @@ class DP_REBS extends DP_Plugin {
 								$term_to_insert = $result['term_id'];
 							}
 
-							wp_set_object_terms( $id, $term_to_insert, $taxonomy );
+							$to_insert[] = $term_to_insert;
 						}
 
 					}
-
+					// set everything at once, this way one tag won't replace the previous one set
+					wp_set_object_terms( $id, $to_insert, $taxonomy );
 				}
 
  			} else {
