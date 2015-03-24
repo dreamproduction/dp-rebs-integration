@@ -202,12 +202,12 @@ class DP_REBS extends DP_Plugin {
 						$term_to_insert = $parent;
 						if ( !$term_info = term_exists($parent, $taxonomy) ) {
 							$result = wp_insert_term( $parent, $taxonomy);
-							$term_to_insert = $result['term_id'];
+							$term_info = $term_to_insert = $result['term_id'];
 						}
 						wp_set_object_terms( $id, $term_to_insert, $taxonomy );
 						foreach ( $term_array as $term ) {
 							$term_to_insert = $term;
-							if ( !$subterm_info = term_exists($term, $taxonomy) ) {
+							if ( ! term_exists($term, $taxonomy) ) {
 								$result = wp_insert_term( $term, $taxonomy, array( 'parent' => $term_info ));
 								$term_to_insert = $result['term_id'];
 							}
