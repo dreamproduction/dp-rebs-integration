@@ -41,6 +41,8 @@ class DP_REBS extends DP_Plugin {
 		// verify data
 
 		// crud if the case
+
+
 	}
 
 	function property_meta() {
@@ -106,6 +108,9 @@ class DP_REBS extends DP_Plugin {
 
 	function update_from_api() {
 		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
+
+		$api = new DP_REBS_API();
+		$api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_ids();
 
 		$this->get_data();
 		$this->save_data();

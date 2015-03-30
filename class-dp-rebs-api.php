@@ -7,9 +7,10 @@
  */
 
 class DP_REBS_API {
-	var $url = 'http://demo.rebs-group.com/';
-	var $data = array();
-	var $current_data;
+	private $base = 'http://demo.rebs-group.com/';
+	private $url = '';
+	private $data = array();
+	private $current_data;
 
 	function __construct( $url = '' ) {
 		$this->url = $url ? trailingslashit( $url ) : $this->url ;
@@ -18,19 +19,25 @@ class DP_REBS_API {
 	function set_url( $mode, $data = array() ) {
 		switch ( $mode ) {
 			case 'single' :
-				$url_part = isset( $data['id'] ) ? absint( $data['id'] ) : 0;
-				$this->url .= 'api/public/property/';
+				$url_part = isset( $data ) ? absint( $data ) : 0;
+				$this->url = $this->base . 'api/public/property/';
 				$this->url .= $url_part;
 				break;
 			case 'agent' :
-				$url_part = isset( $data['id'] ) ? absint( $data['id'] ) : 0;
-				$this->url .= 'api/public/agent/';
+				$url_part = isset( $data ) ? absint( $data ) : 0;
+				$this->url = $this->base . 'api/public/agent/';
 				$this->url .= $url_part;
 				break;
 			case 'list_since' :
-				$url_args = isset( $data ) ? array( 'date_modified_by_user__get' => $data ) : array();
-				$this->url .= 'api/public/property/';
+				$url_args = isset( $data ) ? array( 'date_modified_by_user__gte' => $data ) : array();
+				$this->url = $this->base . 'api/public/property/';
 				$this->url = add_query_arg( $url_args, $this->url );
+				break;
+			case 'schema' :
+				$url_part = isset( $data ) ? $data : '';
+				$this->url = $this->base . 'api/public/';
+				$this->url .= $url_part;
+				$this->url .= '/schema/';
 				break;
 			default :
 				$this->url = $mode;
@@ -82,6 +89,10 @@ class DP_REBS_API {
 			$ids[] = $object->id;
 		}
 		return $ids;
+	}
+
+	function return_url() {
+		return $this->url;
 	}
 
 }
