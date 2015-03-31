@@ -16,7 +16,7 @@ class DP_REBS_API {
 		$this->url = $url ? trailingslashit( $url ) : $this->url ;
 	}
 
-	function set_url( $mode, $data = array() ) {
+	function set_url( $mode, $data = '' ) {
 		switch ( $mode ) {
 			case 'single' :
 				$url_part = isset( $data ) ? absint( $data ) : 0;
@@ -74,18 +74,24 @@ class DP_REBS_API {
 	}
 
 	function call() {
+		$this->current_data = array();
+
 		$response = wp_remote_get( $this->url );
 
 		if ( is_wp_error( $response ) ) {
-			return false;
+			wp_die( $response->get_error_message() );
 		}
 
 		if ( $response['response']['code'] == 200 ) {
 			$this->current_data = json_decode( $response['body'], true );
-			return $this;
 		}
 
-		return false;
+		return $this;
+	}
+
+	function clear() {
+		$this->data = array();
+		return $this;
 	}
 
 	function return_ids() {
