@@ -13,7 +13,7 @@ class DP_REBS_API {
 	private $current_data;
 
 	function __construct( $url = '' ) {
-		$this->url = $url ? trailingslashit( $url ) : $this->url ;
+		$this->base = $url ? trailingslashit( $url ) : $this->base ;
 	}
 
 	function set_url( $mode, $data = '' ) {
