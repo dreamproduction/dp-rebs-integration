@@ -238,98 +238,35 @@ class DP_REBS_Property {
 	}
 
 	public function save_images() {
-		foreach ( $this->images as $image ) {
-			$image_id = $this->external_image_sideload( $image, $this->id );
-			if ( $image_id )
-				add_post_meta( $this->id, 'estate_property_images', $image_id, false );
+		if ( ! $this->images )
+			return $this;
+
+		$images = new DP_Save_Images( 'estate_property_images' );
+
+		foreach ( $this->images as $image_url ) {
+			$images->add( $image_url, $this->id );
 		}
+
+		$images->store_data()->save_later();
+
 		return $this;
 	}
 
 	public function save_sketches() {
-		foreach ( $this->sketches as $image ) {
-			$image_id = $this->external_image_sideload( $image, $this->id );
-			if ( $image_id )
-				add_post_meta( $this->id, 'estate_property_sketches', $image_id, false );
+		if ( ! $this->sketches )
+			return $this;
+
+		$images = new DP_Save_Images( 'estate_property_sketches' );
+
+		foreach ( $this->sketches as $image_url ) {
+			$images->add( $image_url, $this->id );
 		}
+
+		$images->store_data()->save_later();
 		return $this;
 	}
 
-	/**
-	 * Handle importing of external image.
-	 * Most of this taken from WordPress function 'media_sideload_image'.
-	 *
-	 * @param string $file The URL of the image to download
-	 * @param int $post_id The post ID the media is to be associated with
-	 *
-	 * @return string - just the image url on success, false on failure
-	 */
-	function external_image_sideload( $file , $post_id ) {
 
-		if ( ! function_exists( 'download_url' ) )
-			require_once( ABSPATH . 'wp-admin/includes/file.php' );
-		if ( ! function_exists( 'media_handle_sideload' ) )
-			require_once( ABSPATH . 'wp-admin/includes/media.php' );
-		if ( ! function_exists( 'wp_read_image_metadata' ) )
-			require_once( ABSPATH . 'wp-admin/includes/image.php' );
-
-		if ( ! empty($file) && $this->is_valid_image( $file ) ) {
-
-			$file_array = array();
-
-			// Set variables for storage
-			// fix file filename for query strings
-			preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $file, $matches);
-			$file_array['name'] = basename($matches[0]);
-
-			if ( $id = $this->file_imported( $file_array['name'] ) )
-				return $id;
-
-			// Download file to temp location
-			$file_array['tmp_name'] = download_url( $file );
-
-			// If error storing temporarily, unlink
-			if ( is_wp_error( $file_array['tmp_name'] ) ) {
-				@unlink($file_array['tmp_name']);
-				$file_array['tmp_name'] = '';
-				return false;
-			}
-
-			// do the validation and storage stuff
-			$id = media_handle_sideload( $file_array, $post_id, $file_array['name'] );
-			// If error storing permanently, unlink
-			if ( is_wp_error($id) ) {
-				@unlink($file_array['tmp_name']);
-				return false;
-			}
-
-			return $id;
-		}
-
-		return false;
-	}
-
-	function is_valid_image( $file ) {
-
-		$allowed = array( '.jpg' , '.png', '.bmp' , '.gif' );
-
-		$ext = substr( $file , -4 );
-
-		return in_array( strtolower($ext) , $allowed );
-	}
-
-	/**
-	 * Retrieve a post given its title.
-	 *
-	 * @param string $filename Page title
-	 * @global wpdb $wpdb       WordPress Database Access Abstraction Object
-	 *
-	 * @return mixed
-	 */
-	function file_imported( $filename ) {
-		global $wpdb;
-		return  $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type='attachment'", $filename ));
-	}
 
 	public function __toString() {
 		return var_export( $this );
