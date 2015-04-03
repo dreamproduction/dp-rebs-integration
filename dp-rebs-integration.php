@@ -87,12 +87,32 @@ class DP_REBS extends DP_Plugin {
 	function handle_menu_actions() {
 		header("Content-Type: text/html; charset=utf-8");
 
+		// testing
+
+		//add_action( 'custom_hehe', 'DP_Save_Images::save' );
+	//	do_action( 'custom_hehe', 'trei' );
+
+		$call = array( 'DP_Save_Images', 'save', 'dp_images' );
+
+
+		//call_user_func_array(array( 'DP_Save_Images', 'save' ), array('dp_images') );
+
+//		$reflect  = new ReflectionClass( $obj[0] );
+//		$instance = $reflect->newInstanceArgs( array( $obj[2] ) );
+//		$instance->{$obj[1]}();
+
+		$obj = new $call[0]( $call[2] );
+		$obj->{$call[1]}();
+
+		//
+		die('final');
+
 		$api = new DP_REBS_API();
 		$api_data = $api->set_url( 'single', '4976' )->call()->store()->walk()->return_data();
 
 		foreach( $api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			echo $property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images();
+			echo $property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images()->save_sketches();
 		}
 
 
