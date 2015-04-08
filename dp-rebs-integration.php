@@ -32,6 +32,8 @@ class DP_REBS extends DP_Plugin {
 		add_action( 'init', array( $this, 'handle_menu_actions' ), 99 );
 		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
 
+		new DP_Parallel();
+
 				// get last modified
 			// do request
 			// save last modified
@@ -85,56 +87,27 @@ class DP_REBS extends DP_Plugin {
 	}
 
 	function handle_menu_actions() {
-		header("Content-Type: text/html; charset=utf-8");
-
-		// testing
-
-		//add_action( 'custom_hehe', 'DP_Save_Images::save' );
-	//	do_action( 'custom_hehe', 'trei' );
-
-		$call = array( 'DP_Save_Images', 'save', 'dp_images' );
-
-
-		//call_user_func_array(array( 'DP_Save_Images', 'save' ), array('dp_images') );
-
-//		$reflect  = new ReflectionClass( $obj[0] );
-//		$instance = $reflect->newInstanceArgs( array( $obj[2] ) );
-//		$instance->{$obj[1]}();
-
-		$obj = new $call[0]( $call[2] );
-		$obj->{$call[1]}();
-
-		//
-		die('final');
-
-		$api = new DP_REBS_API();
-		$api_data = $api->set_url( 'single', '4976' )->call()->store()->walk()->return_data();
-
-		foreach( $api_data as $data ) {
-			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			echo $property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images()->save_sketches();
-		}
-
-
-		die( "coz I'm an albatraoz" );
-
 
 		if ( ! isset( $_GET[ $this->name('update') ] ) )
 			return;
 
 		$what = $_GET[ $this->name('update') ];
+		$api_data = array();
+		$api = new DP_REBS_API();
 
 		if ( $what == 'everything' ) {
-			$this->get_data();
-			$this->save_data();
+			$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
+			$api_data = $api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
 		}
 
 		if ( is_numeric($what) ) {
-
 			$property_id = get_post_meta( $what, 'estate_property_id', true );
+			$api_data = $api->set_url( 'single', $property_id )->call()->store()->walk()->return_data();
+		}
 
-			$this->get_data( 'single', $property_id );
-			$this->save_data( 'single' );
+		foreach( $api_data as $data ) {
+			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
+			$property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images()->save_sketches();
 		}
 	}
 

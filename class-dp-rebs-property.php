@@ -169,6 +169,9 @@ class DP_REBS_Property {
 		}
 		$this->meta['estate_property_address'] = implode( ', ', array( $this->data['street'], $this->data['zone'], $this->data['city'] ) );
 
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'map fields' );
+		$this->log( $message );
+
 		return $this;
 	}
 
@@ -183,11 +186,16 @@ class DP_REBS_Property {
 			)
 		);
 
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'exists query' );
+		$this->log( $message );
+
 		if ( $exists )
 			$this->object['ID'] = $exists[0]->ID;
 
 		$this->id = wp_insert_post( $this->object );
 
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
+		$this->log( $message );
 
 		return $this;
 	}
@@ -227,6 +235,9 @@ class DP_REBS_Property {
 			}
 		}
 
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->taxonomy ) );
+		$this->log( $message );
+
 		return $this;
 	}
 
@@ -234,6 +245,10 @@ class DP_REBS_Property {
 		foreach ( $this->meta as $key => $meta_value ) {
 			update_post_meta( $this->id, $key, $meta_value );
 		}
+
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
+		$this->log( $message );
+
 		return $this;
 	}
 
@@ -249,6 +264,9 @@ class DP_REBS_Property {
 
 		$images->store_data()->save_later();
 
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->images ) );
+		$this->log( $message );
+
 		return $this;
 	}
 
@@ -263,6 +281,10 @@ class DP_REBS_Property {
 		}
 
 		$images->store_data()->save_later();
+
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->sketches ) );
+		$this->log( $message );
+
 		return $this;
 	}
 
@@ -270,5 +292,14 @@ class DP_REBS_Property {
 
 	public function __toString() {
 		return var_export( $this );
+	}
+
+	/**
+	 * @param string $message
+	 */
+	function log( $message ) {
+		$upload_dir = wp_upload_dir();
+		$date = date_i18n( 'Y-m-d H:i:s' ) . " | ";
+		error_log( $date . $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
 	}
 }
