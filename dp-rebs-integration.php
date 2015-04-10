@@ -32,6 +32,9 @@ class DP_REBS extends DP_Plugin {
 		add_action( 'init', array( $this, 'handle_menu_actions' ), 99 );
 		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
 
+		// An option in general settings
+		add_action( 'admin_init', array( $this, 'setup_plugin_options' ), 11 );
+
 		new DP_Parallel();
 
 				// get last modified
