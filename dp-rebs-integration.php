@@ -13,6 +13,18 @@ License: GPL2
 include( 'inc/dp-plugin/dp-plugin.php' );
 
 class DP_REBS extends DP_Plugin {
+
+	/**
+	 * A sub class must override this parameter to allow all subclasses to have their own instance
+	 * @var DP_Plugin The single instance of the class
+	 */
+	protected static $_instance = null;
+	/**
+	 * A sub class must override this parameter for the autoloader to work
+	 * @var String
+	 */
+	static $file;
+
 	public $api_url;
 	public $last_modified;
 	public $api_data;
