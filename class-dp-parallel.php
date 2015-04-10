@@ -17,8 +17,8 @@ class DP_Parallel {
 //		add_action( 'my_hook', array( $this, 'init' ) );
 		add_action( 'init', array( $this, 'init' ), 121 );
 
-		add_action( 'parse_request', array( $this, 'send' ), 5 );
-		add_action( 'parse_request', array( $this, 'receive' ), 10 );
+		add_action( 'init', array( $this, 'send' ), 205 );
+		add_action( 'init', array( $this, 'receive' ), 210 );
 
 	}
 
@@ -40,6 +40,8 @@ class DP_Parallel {
 			$request['blocking'] = false;
 			$request['timeout'] = 1;
 			$request['body'] = array( 'dp_action' => $this->send_action );
+			if ( '0' == get_option('blog_public') )
+				$request['headers']['Authorization'] = 'Basic ' . base64_encode( 'test:this' );
 
 			wp_remote_post( home_url( $this->send_page ), $request );
 		}
@@ -48,8 +50,9 @@ class DP_Parallel {
 		$this->log( $message );
 	}
 
-	function send( $query ) {
-		if ( $query->request == $this->send_page ) {
+	function send() {
+
+		if ( $this->is_current_action( $this->send_action ) ) {
 			// init stuff
 			$count = 1;
 			$limit = 20;
@@ -72,14 +75,16 @@ class DP_Parallel {
 			}
 
 			update_option( 'dp_later', $import_jobs );
+			// all good, stop the wp execution
+			die( 'ok' );
 		}
 	}
 
-	function receive( $query ) {
+	function receive() {
 
 		$call = isset( $_POST['job'] ) ? $_POST['job'] : array();
 
-		if ( $query->request == $this->receive_page && $this->is_current_action( $this->receive_action ) && $call ) {
+		if ( $this->is_current_action( $this->receive_action ) && $call ) {
 			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), $call[0] );
 			$this->log( $message );
 
@@ -89,6 +94,8 @@ class DP_Parallel {
 
 			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), $call[0] );
 			$this->log( $message );
+			// all good, stop the wp execution
+			die( 'ok' );
 		}
 	}
 
