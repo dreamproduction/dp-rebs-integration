@@ -86,6 +86,21 @@ class DP_REBS extends DP_Plugin {
 
 	}
 
+	/**
+	 * Register fields for general options page.
+	 */
+	function setup_plugin_options() {
+		add_settings_field( 'rebs_api_url' , __( 'REBS API URL', 'dp' ), array( $this, 'display_options' ) , 'general' , 'default' );
+		register_setting( 'general', 'rebs_api_url' );
+	}
+
+	/**
+	 * Display markup for options.
+	 */
+	function display_options() {
+		include( 'views/options.php' );
+	}
+
 	function handle_menu_actions() {
 
 		if ( ! isset( $_GET[ $this->name('update') ] ) )
@@ -93,7 +108,9 @@ class DP_REBS extends DP_Plugin {
 
 		$what = $_GET[ $this->name('update') ];
 		$api_data = array();
-		$api = new DP_REBS_API();
+
+		$url = get_option( 'rebs_api_url', '' );
+		$api = new DP_REBS_API( $url );
 
 		if ( $what == 'everything' ) {
 			$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
