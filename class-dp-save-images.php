@@ -21,7 +21,9 @@ class DP_Save_Images {
 
 	public function remove( $key ) {
 		unset( $this->data[$key] );
-		return $this->store_data();
+		$this->store_data();
+
+		return $this;
 	}
 
 	public function save() {
@@ -31,12 +33,14 @@ class DP_Save_Images {
 			return $this;
 		}
 
+		$this->store_data();
+
 		$image_id = self::import_external_image( $element['url'], $element['parent_id'] );
 
 		if ( $image_id )
 			add_post_meta( $element['parent_id'], $this->name, $image_id, false );
 
-		return $this->store_data();
+		return $this;
 	}
 
 	function save_later() {

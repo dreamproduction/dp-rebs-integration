@@ -59,7 +59,7 @@ class DP_Parallel {
 
 			$request = array();
 			$request['blocking'] = false;
-			$request['timeout'] = 1;
+			$request['timeout'] = 2;
 
 			$import_jobs = get_option( 'dp_later', array() );
 
