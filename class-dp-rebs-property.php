@@ -77,7 +77,7 @@ class DP_REBS_Property {
 				case 'property_type':
 					$this->taxonomy['property-type'] = $this->get_field_option( (string) $key, (string) $value );
 					break;
-				case 'tags_en' :
+				case 'tags' :
 					$this->taxonomy['property-features'] = $value;
 					break;
 				case 'title':
@@ -105,7 +105,7 @@ class DP_REBS_Property {
 				case 'house_type' :
 					$this->meta['estate_property_' . $key] = $this->get_field_option( (string) $key, (string) $value );
 					break;
-				case 'date_added':
+				case 'date_modified_by_user':
 					$this->object['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
 				case 'full_images' :
@@ -118,7 +118,7 @@ class DP_REBS_Property {
 				case 'cut' :
 				case 'availability' :
 				case 'date_modified' :
-				case 'date_modified_by_user' :
+				case 'date_added' :
 				case 'date_validated' :
 				case 'exclusive' :
 				case 'images' :
@@ -140,7 +140,7 @@ class DP_REBS_Property {
 				case 'zero_commission_sale' :
 				case 'verbose_floor' :
 				case 'verbose_price' :
-				case 'tags' :
+				case 'tags_en' :
 				case 'agent' :
 				case 'residential_complex' :
 				case 'is_available' :
