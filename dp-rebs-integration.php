@@ -128,7 +128,8 @@ class DP_REBS extends DP_Plugin {
 		$api = new DP_REBS_API( $url );
 
 		if ( $what == 'everything' ) {
-			$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
+			// defaults to 01.01.2015 in unix time
+			$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', 1420070400 ) );
 			$api_data = $api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
 		}
 
