@@ -7,6 +7,7 @@ class DP_Save_Images {
 	public function __construct( $name, $later_name = 'dp_later' ) {
 		$this->name = $name;
 		$this->later_name = $later_name;
+		$this->later_actions = array();
 
 		$this->set_data();
 	}
@@ -16,6 +17,7 @@ class DP_Save_Images {
 		$parts = parse_url( $url );
 		$key = basename( $parts['path'] );
 		$this->data[$key] = array( 'url' => $url, 'parent_id' => $parent_id );
+		$this->later_actions[] = array( __CLASS__, 'save', $this->name );
 		return $this;
 	}
 
@@ -45,7 +47,9 @@ class DP_Save_Images {
 
 	function save_later() {
 		$later_actions = get_option( $this->later_name, array() );
-		$later_actions[] = array( __CLASS__, 'save', $this->name );
+		foreach ( $this->later_actions as $action ) {
+			$later_actions[] = $action;
+		}
 		update_option( $this->later_name, $later_actions );
 
 		return $this;
@@ -138,7 +142,7 @@ class DP_Save_Images {
 	 *
 	 * @return mixed
 	 */
-	static function is_stored_image( $filename ) {
+	function is_stored_image( $filename ) {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 		return  $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type='attachment'", $filename ));
