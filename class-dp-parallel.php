@@ -6,10 +6,11 @@ class DP_Parallel {
 	var $target;
 
 	function __construct() {
-		$this->receive_page = 'dp-parallel';
-		$this->send_page = 'dp-parallel-send';
-		$this->receive_action = 'dp-parallel';
-		$this->send_action = 'dp-parallel';
+		$this->receive_page = 'dp-parallel-page-receive';
+		$this->send_page = 'dp-parallel-page-send';
+		$this->receive_action = 'dp-parallel-action-receive';
+		$this->send_action = 'dp-parallel-action-send';
+		$this->queue = get_option( 'dp_later', array() );
 
 		// TODO: replace dummy code
 
@@ -18,35 +19,35 @@ class DP_Parallel {
 		add_action( 'init', array( $this, 'init' ), 121 );
 
 		add_action( 'init', array( $this, 'send' ), 205 );
-		add_action( 'init', array( $this, 'receive' ), 210 );
+		add_action( 'init', array( $this, 'receive' ), 204 );
 
 	}
 
 	function init() {
-		// don't run on our POST
-		if ( $this->is_current_action( $this->receive_action ) || $this->is_current_action( $this->send_action ) )
+		$this->log( 'do nothing' );
+		return;
+
+		// check queue on every init
+		if ( ! $this->queue ) {
+			$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Nothing in queue' );
+			$this->log( $message );
 			return;
-
-
-
-		$import_jobs = get_option( 'dp_later', array() );
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $import_jobs ) );
-		$this->log( $message );
-
-		if ( $import_jobs ) {
-
-			$request = array();
-			$request['blocking'] = false;
-			$request['timeout'] = 1;
-			$request['body'] = array( 'dp_action' => $this->send_action );
-			if ( '0' == get_option('blog_public') )
-				$request['headers']['Authorization'] = 'Basic ' . base64_encode( 'test:this' );
-
-			wp_remote_post( home_url( $this->send_page ), $request );
 		}
 
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $import_jobs ) );
+		// don't run on our POST
+		if ( $this->is_current_action( $this->receive_action ) || $this->is_current_action( $this->send_action ) ) {
+			$this->log( 'Should skip on ' . $_POST['dp_action']  );
+			return;
+		}
+
+		$request = array();
+		$request['blocking'] = false;
+		$request['timeout'] = 1;
+		$request['body'] = array( 'dp_action' => $this->send_action );
+
+		wp_remote_post( home_url( $this->send_page ), $request );
+
+		$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Run request' );
 		$this->log( $message );
 	}
 
@@ -58,14 +59,15 @@ class DP_Parallel {
 			$limit = 20;
 
 			$request = array();
-			$request['blocking'] = false;
-			$request['timeout'] = 2;
+			$request['blocking'] = true;
+			$request['timeout'] = 1;
 
-			$import_jobs = get_option( 'dp_later', array() );
+			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
+			$this->log( $message );
 
-			while ( $import_jobs && $count <= $limit ) {
+			while ( $this->queue && $count <= $limit ) {
 				$request['body'] = array(
-					'job' => array_shift( $import_jobs ),
+					'job' => array_shift( $this->queue ),
 					'dp_action' => $this->receive_action
 				);
 
@@ -74,9 +76,11 @@ class DP_Parallel {
 				$count++;
 			}
 
-			update_option( 'dp_later', $import_jobs );
+			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
+			$this->log( $message );
+
+			update_option( 'dp_later', $this->queue );
 			// all good, stop the wp execution
-			die( 'ok' );
 		}
 	}
 
@@ -85,6 +89,7 @@ class DP_Parallel {
 		$call = isset( $_POST['job'] ) ? $_POST['job'] : array();
 
 		if ( $this->is_current_action( $this->receive_action ) && $call ) {
+
 			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), $call[0] );
 			$this->log( $message );
 
@@ -95,7 +100,6 @@ class DP_Parallel {
 			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), $call[0] );
 			$this->log( $message );
 			// all good, stop the wp execution
-			die( 'ok' );
 		}
 	}
 
