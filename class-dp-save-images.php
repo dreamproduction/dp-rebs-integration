@@ -16,8 +16,8 @@ class DP_Save_Images {
 		// put key the filename for easier array_unique
 		$parts = parse_url( $url );
 		$key = basename( $parts['path'] );
-		$this->data[$key] = array( 'url' => $url, 'parent_id' => $parent_id );
-		$this->later_actions[] = array( __CLASS__, 'save', $this->name );
+		$this->data[$key] = array( 'key' => $key, 'url' => $url, 'parent_id' => $parent_id );
+		$this->later_actions[$key] = array( __CLASS__, 'save', $this->name, $this->data[$key] );
 		return $this;
 	}
 
@@ -28,13 +28,15 @@ class DP_Save_Images {
 		return $this;
 	}
 
-	public function save() {
-		$element = array_shift( $this->data );
+	public function save( $element ) {
 
-		if ( ! $element ) {
+		$this->set_data();
+
+		if ( ! $element || ! isset( $this->data[ $element['key'] ] ) ) {
 			return $this;
 		}
 
+		$this->remove( $element['key'] );
 		$this->store_data();
 
 		$image_id = self::import_external_image( $element['url'], $element['parent_id'] );
@@ -42,13 +44,15 @@ class DP_Save_Images {
 		if ( $image_id )
 			add_post_meta( $element['parent_id'], $this->name, $image_id, false );
 
+		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
+
 		return $this;
 	}
 
 	function save_later() {
 		$later_actions = get_option( $this->later_name, array() );
-		foreach ( $this->later_actions as $action ) {
-			$later_actions[] = $action;
+		foreach ( $this->later_actions as $key => $action ) {
+			$later_actions[$key] = $action;
 		}
 		update_option( $this->later_name, $later_actions );
 
@@ -123,6 +127,15 @@ class DP_Save_Images {
 		}
 
 		return false;
+	}
+
+	/**
+	 * @param string $message
+	 */
+	function log( $message ) {
+		$upload_dir = wp_upload_dir();
+		$date = date_i18n( 'Y-m-d H:i:s' ) . " | ";
+		error_log( $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
 	}
 
 	static function is_valid_image( $filename ) {

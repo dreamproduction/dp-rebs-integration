@@ -12,31 +12,49 @@ class DP_Parallel {
 		$this->send_action = 'dp-parallel-action-send';
 		$this->queue = get_option( 'dp_later', array() );
 
-		// TODO: replace dummy code
-
-		//set_cron( 'minutly', 'my_hook' );
-//		add_action( 'my_hook', array( $this, 'init' ) );
-		add_action( 'init', array( $this, 'init' ), 121 );
-
 		add_action( 'init', array( $this, 'send' ), 205 );
 		add_action( 'init', array( $this, 'receive' ), 204 );
 
+		add_filter( 'cron_schedules', array( $this, 'add_schedule_interval' ) );
+
+		if ( ! wp_next_scheduled( 'dp_parallel_init' ) ) {
+			wp_schedule_event( time(), 'minutely', 'dp_parallel_init' );
+		}
+
+		add_action( 'dp_parallel_init', array( $this, 'init' ) );
+
+	}
+
+	function add_schedule_interval( $intervals ) {
+		$intervals['minutely'] = array( 'interval' => 60, 'display' => __( 'Every minute', 'dp' ) );
+		return $intervals;
 	}
 
 	function init() {
-		$this->log( 'do nothing' );
-		return;
+
+		$fp = fopen( "/tmp/dp_parallel.lock","w"); // open it for WRITING ("w")
+
+		// get lock non blocking, return false if lock can not be acquired
+		if( ! flock($fp, LOCK_EX | LOCK_NB )) {
+			$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Cron already running' );
+			$this->log( $message );
+			return;
+		}
+
+		update_option( 'dp_parallel_cron_running', 'yes' );
 
 		// check queue on every init
 		if ( ! $this->queue ) {
 			$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Nothing in queue' );
 			$this->log( $message );
+			flock($fp, LOCK_UN);
 			return;
 		}
 
 		// don't run on our POST
 		if ( $this->is_current_action( $this->receive_action ) || $this->is_current_action( $this->send_action ) ) {
 			$this->log( 'Should skip on ' . $_POST['dp_action']  );
+			flock($fp, LOCK_UN);
 			return;
 		}
 
@@ -49,6 +67,8 @@ class DP_Parallel {
 
 		$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Run request' );
 		$this->log( $message );
+
+		flock($fp, LOCK_UN);
 	}
 
 	function send() {
@@ -65,6 +85,11 @@ class DP_Parallel {
 			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
 			$this->log( $message );
 
+			// get all later actions
+			$this->queue = get_option( 'dp_later', array() );
+			// remove actions that will be processed now, save modified array
+			update_option( 'dp_later', array_slice( $this->queue, $limit, null, true ) );
+
 			while ( $this->queue && $count <= $limit ) {
 				$request['body'] = array(
 					'job' => array_shift( $this->queue ),
@@ -79,7 +104,7 @@ class DP_Parallel {
 			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
 			$this->log( $message );
 
-			update_option( 'dp_later', $this->queue );
+
 			// all good, stop the wp execution
 		}
 	}
@@ -95,7 +120,7 @@ class DP_Parallel {
 
 			// instantiate a new object with params for __construct & call method
 			$obj = new $call[0]( $call[2] );
-			$obj->{$call[1]}();
+			$obj->{$call[1]}( $call[3] );
 
 			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), $call[0] );
 			$this->log( $message );
