@@ -27,6 +27,7 @@ class DP_REBS extends DP_Plugin {
 
 	public $date_format = 'Y-m-d H:i:s';
 	public $last_modified;
+	public $endpoint = 'rebs-id';
 	/**
 	 * @var DP_REBS_API
 	 */
@@ -54,11 +55,55 @@ class DP_REBS extends DP_Plugin {
 		// An option in general settings
 		add_action( 'admin_init', array( $this, 'setup_plugin_options' ), 11 );
 
+		add_action( 'init', array( $this, 'add_endpoint' ) );
+		add_action( 'template_redirect', array( $this, 'endoint_redirect' ) );
+
 		new DP_Parallel();
 	}
 
+	function add_endpoint() {
+		//
+		add_rewrite_endpoint( $this->endpoint, EP_ROOT );
+	}
+
+
 	function property_meta() {
 		add_post_type_support( 'property', 'custom-fields' );
+	}
+
+	function endoint_redirect() {
+		global $wp_query;
+
+		// if this is not our request then bail
+		if ( ! isset( $wp_query->query_vars[ $this->endpoint ] ) )
+			return;
+
+		// search a property with queried ID
+		$exists = get_posts(
+			array(
+				'post_type' => 'property',
+				'suppress_filters' => false,
+				'meta_key' => 'estate_property_id',
+				'meta_value' => $wp_query->query_vars[ $this->endpoint ],
+				'posts_per_page' => 1
+			)
+		);
+
+		if ( $exists ) {
+			// redirect to the property permalink
+			wp_redirect( get_permalink( $exists[0]->ID ), 301 );
+			exit;
+		}
+
+		// display a 404 if no property with that ID is available
+		$template = get_404_template();
+
+		// filter the path before including, as WordPress does
+		if ( $template = apply_filters( 'template_include', $template ) )
+			include( $template );
+
+		// stop WordPress execution after include
+		exit;
 	}
 
 	function menu_buttons( $wp_admin_bar ) {

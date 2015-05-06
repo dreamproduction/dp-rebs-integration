@@ -87,7 +87,6 @@ class DP_REBS_Property {
 					$this->object['post_content'] = $value;
 					break;
 				case 'id':
-					$this->object['post_name'] = (string) $value;
 					$this->meta['estate_property_id'] = (string) $value;
 					break;
 				case 'price_sale' :
