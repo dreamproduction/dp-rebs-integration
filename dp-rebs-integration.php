@@ -25,21 +25,28 @@ class DP_REBS extends DP_Plugin {
 	 */
 	static $file;
 
-	public $api_url;
+	public $date_format = 'Y-m-d H:i:s';
 	public $last_modified;
-	public $api_data;
-	public $data;
+	/**
+	 * @var DP_REBS_API
+	 */
+	public $api;
+	public $api_data = array();
 
 	/**
 	 * Main plugin method. Called right after auto-loader.
 	 */
 	function plugin_init() {
 		$this->prefix = 'dp_rebs';
-		$this->api_url = 'http://demo.rebs-group.com/api/public/property/';
+		// defaults to 01.01.2015 in unix time
+		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( $this->date_format, 1420070400 ) );
+
+		$url = get_option( 'rebs_api_url', '' );
+		$this->api = new DP_REBS_API( $url );
 
 		// set cron via activation
 		// set cron action
-//		add_action( 'init', array( $this, 'update_from_api' ) );
+		add_action( 'dp_hourly', array( $this, 'update_from_api' ) );
 		add_action( 'admin_bar_menu', array( $this, 'menu_buttons' ) );
 		add_action( 'init', array( $this, 'handle_menu_actions' ), 99 );
 		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
@@ -48,18 +55,6 @@ class DP_REBS extends DP_Plugin {
 		add_action( 'admin_init', array( $this, 'setup_plugin_options' ), 11 );
 
 		new DP_Parallel();
-
-				// get last modified
-			// do request
-			// save last modified
-			// map fields
-			// save data
-
-		// verify data
-
-		// crud if the case
-
-
 	}
 
 	function property_meta() {
@@ -122,26 +117,34 @@ class DP_REBS extends DP_Plugin {
 			return;
 
 		$what = $_GET[ $this->name('update') ];
-		$api_data = array();
-
-		$url = get_option( 'rebs_api_url', '' );
-		$api = new DP_REBS_API( $url );
 
 		if ( $what == 'everything' ) {
-			// defaults to 01.01.2015 in unix time
-			$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', 1420070400 ) );
-			$api_data = $api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
+			$this->set_api_data_everything();
 		}
 
 		if ( is_numeric($what) ) {
-			$property_id = get_post_meta( $what, 'estate_property_id', true );
-			$api_data = $api->set_url( 'single', $property_id )->call()->store()->walk()->return_data();
+			$this->set_api_data_single( $what );
 		}
 
-		foreach( $api_data as $data ) {
+		$this->save_api_data();
+	}
+
+	function set_api_data_everything() {
+		$this->api_data = $this->api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
+	}
+
+	function set_api_data_single( $id ) {
+		$property_id = get_post_meta( $id, 'estate_property_id', true );
+		$this->api_data = $this->api->set_url( 'single', $property_id )->call()->store()->walk()->return_data();
+	}
+
+	function save_api_data() {
+		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
 			$property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images()->save_sketches();
 		}
+		$this->last_modified = date_i18n( $this->date_format, current_time( 'timestamp' ) );
+		update_option( $this->name( 'last_modified' ), $this->last_modified );
 	}
 
 	function get_schema( $type = 'property' ) {
@@ -159,28 +162,16 @@ class DP_REBS extends DP_Plugin {
 	}
 
 	function update_from_api() {
-		/*
-		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( 'Y-m-d', time() - WEEK_IN_SECONDS ) );
-
-		$api = new DP_REBS_API();
-		$api_data = $api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
-
-
-
-
-		$this->get_data();
-		$this->save_data();
-
-		update_option( $this->name( 'last_modified' ), $this->last_modified );
-		*/
+		$this->set_api_data_everything();
+		$this->save_api_data();
 	}
 
 	static function set_cron() {
-		//wp_schedule_event( time(), 'hourly', 'dp_hourly' );
+		wp_schedule_event( time(), 'hourly', 'dp_hourly' );
 	}
 
 	static function clear_cron() {
-		//wp_clear_scheduled_hook( 'dp_hourly' );
+		wp_clear_scheduled_hook( 'dp_hourly' );
 	}
 
 }
