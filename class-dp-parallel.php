@@ -108,7 +108,7 @@ class DP_Parallel {
 				$count++;
 			}
 
-			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
+			$message = sprintf( '%s, Time - %s, Objects - %s, Stop', __METHOD__, timer_stop(), count( $this->queue ) );
 			$this->log( $message );
 
 
