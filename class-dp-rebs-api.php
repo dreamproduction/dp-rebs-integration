@@ -50,13 +50,14 @@ class DP_REBS_API {
 	}
 
 	function store() {
-		if ( $this->current_data['objects'] ) {
+		if ( isset( $this->current_data['objects'] ) && $this->current_data['objects'] ) {
 			// regular call
 			$this->data = $this->data + $this->current_data['objects'];
-		} elseif ( $this->current_data['fields'] ) {
+		} elseif ( isset( $this->current_data['fields'] ) && $this->current_data['fields'] ) {
 			// schema call
 			$this->data = $this->data + $this->current_data['fields'];
 		} else {
+			// single call
 			$this->data[] = $this->current_data;
 		}
 
@@ -109,5 +110,4 @@ class DP_REBS_API {
 	function return_data() {
 		return $this->data;
 	}
-
 }

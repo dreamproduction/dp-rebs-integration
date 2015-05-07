@@ -126,6 +126,7 @@ class DP_REBS_Property {
 				case 'promote_carousel' :
 				case 'promote_commission_rent' :
 				case 'promote_commission_sale' :
+				case 'promote_custom_fields' :
 				case 'promote_external' :
 				case 'promote_featured' :
 				case 'promote_flags' :
@@ -153,7 +154,12 @@ class DP_REBS_Property {
 					// handled differently or not needed
 					break;
 				default:
-					$this->meta[ 'estate_property_' . $key] = (string) $value;
+					if ( is_string( $value ) || is_scalar( $value ) ) {
+						$this->meta[ 'estate_property_' . $key ] = (string) $value;
+					} else {
+						// ignore extra arrays added to API
+						$this->log( 'Unhandled array ' . $key );
+					}
 			}
 		}
 

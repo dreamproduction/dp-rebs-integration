@@ -12,6 +12,8 @@ class DP_Parallel {
 		$this->send_action = 'dp-parallel-action-send';
 		$this->queue = get_option( 'dp_later', array() );
 
+		define( 'DP_PARALLEL_SEND', false );
+
 		add_action( 'init', array( $this, 'send' ), 205 );
 		add_action( 'init', array( $this, 'receive' ), 204 );
 
@@ -32,7 +34,9 @@ class DP_Parallel {
 
 	function init() {
 
-		$fp = fopen( "/tmp/dp_parallel.lock","w"); // open it for WRITING ("w")
+		$upload_dir = wp_upload_dir();
+
+		$fp = fopen( $upload_dir . "dp_parallel.lock", "w" ); // open it for WRITING ("w")
 
 		// get lock non blocking, return false if lock can not be acquired
 		if( ! flock($fp, LOCK_EX | LOCK_NB )) {
@@ -73,10 +77,13 @@ class DP_Parallel {
 
 	function send() {
 
-		if ( $this->is_current_action( $this->send_action ) ) {
+		if ( $this->is_current_action( $this->send_action ) && ! DP_PARALLEL_SEND ) {
+
+			define( 'DP_PARALLEL_SEND', true );
+
 			// init stuff
 			$count = 1;
-			$limit = 20;
+			$limit = 5;
 
 			$request = array();
 			$request['blocking'] = true;
