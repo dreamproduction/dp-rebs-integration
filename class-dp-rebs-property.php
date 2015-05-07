@@ -187,7 +187,8 @@ class DP_REBS_Property {
 				'suppress_filters' => false,
 				'meta_key' => 'estate_property_id',
 				'meta_value' => $this->meta['estate_property_id'],
-				'posts_per_page' => 1
+				'posts_per_page' => 1,
+				'post_status' => array( 'publish', 'future' )
 			)
 		);
 
