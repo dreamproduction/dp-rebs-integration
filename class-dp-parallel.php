@@ -83,7 +83,7 @@ class DP_Parallel {
 
 			// init stuff
 			$count = 1;
-			$limit = 5;
+			$limit = 20;
 
 			$request = array();
 			$request['blocking'] = true;
