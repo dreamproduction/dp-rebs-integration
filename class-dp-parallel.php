@@ -36,7 +36,7 @@ class DP_Parallel {
 
 		$upload_dir = wp_upload_dir();
 
-		$fp = fopen( $upload_dir . "dp_parallel.lock", "w" ); // open it for WRITING ("w")
+		$fp = fopen( trailingslashit( $upload_dir['basedir'] ) . "dp_parallel.lock", "w" ); // open it for WRITING ("w")
 
 		// get lock non blocking, return false if lock can not be acquired
 		if( ! flock($fp, LOCK_EX | LOCK_NB )) {
