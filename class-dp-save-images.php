@@ -41,7 +41,11 @@ class DP_Save_Images {
 
 		$image_id = self::import_external_image( $element['url'], $element['parent_id'] );
 
-		if ( $image_id )
+        if ( $image_id && ! has_post_thumbnail( $element['parent_id'] ) ) {
+            set_post_thumbnail( $element['parent_id'], $image_id );
+        }
+
+        if ( $image_id )
 			add_post_meta( $element['parent_id'], $this->name, $image_id, false );
 
 		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
