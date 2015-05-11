@@ -5,12 +5,12 @@ class DP_REBS_Property {
 	protected $schema = array();
 	protected $data;
 
-	public $object;
-	public $meta;
-	public $taxonomy;
-	public $images;
-	public $sketches;
-	public $id;
+	public $object = array();
+	public $meta = array();
+	public $taxonomy = array();
+	public $images = array();
+	public $sketches = array();
+	public $id = 0;
 
 	public function __construct( $schema ) {
 		$this->set_schema( $schema )->set_fields_options();
@@ -172,7 +172,7 @@ class DP_REBS_Property {
 		if ( $this->data['lat'] && $this->data['lng'] ) {
 			$this->meta['estate_property_location'] = sprintf( '%s,%s', $this->data['lat'], $this->data['lng'] );
 		}
-		$this->meta['estate_property_address'] = implode( ', ', array( $this->data['street'], $this->data['zone'], $this->data['city'] ) );
+		$this->meta['estate_property_address'] = implode( ', ', array_filter( array( $this->data['street'], $this->data['zone'], $this->data['city'] ) ) );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'map fields' );
 		$this->log( $message );
@@ -181,24 +181,13 @@ class DP_REBS_Property {
 	}
 
 	public function save_object() {
-		$exists = get_posts(
-			array(
-				'post_type' => 'property',
-				'suppress_filters' => false,
-				'meta_key' => 'estate_property_id',
-				'meta_value' => $this->meta['estate_property_id'],
-				'posts_per_page' => 1,
-				'post_status' => array( 'publish', 'future' )
-			)
-		);
+		if ( $this->needs_update() ) {
+			// return 0 on failure
+			$this->id = wp_insert_post( $this->object, false );
 
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'exists query' );
-		$this->log( $message );
-
-		if ( $exists )
-			$this->object['ID'] = $exists[0]->ID;
-
-		$this->id = wp_insert_post( $this->object );
+			// save ID as early as possible to avoid duplicates
+			add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
+		}
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
 		$this->log( $message );
@@ -206,7 +195,34 @@ class DP_REBS_Property {
 		return $this;
 	}
 
+	protected function needs_update() {
+		$exists = get_posts(
+			array(
+				'post_type' => 'property',
+				'suppress_filters' => false,
+				'meta_key' => 'estate_property_id',
+				'meta_value' => $this->meta['estate_property_id'],
+				'posts_per_page' => 1,
+				'post_status' => 'any'
+			)
+		);
+
+		if ( $exists ) {
+			// wp_insert_post will update if ID present
+			$this->object['ID'] = $exists[0]->ID;
+
+			// bail if no update is necessary
+			if ( $this->object['post_date'] == $exists[0]->post_date )
+				return false;
+		}
+
+		return true;
+	}
+
 	public function save_taxonomy() {
+		if ( $this->id == 0 ) {
+			return $this;
+		}
 
 		foreach ( $this->taxonomy as $taxonomy => $terms ) {
 			if ( $taxonomy == 'property-features' ) {
@@ -248,6 +264,10 @@ class DP_REBS_Property {
 	}
 
 	public function save_meta() {
+		if ( $this->id == 0 ) {
+			return $this;
+		}
+
 		foreach ( $this->meta as $key => $meta_value ) {
 			update_post_meta( $this->id, $key, $meta_value );
 		}
@@ -259,8 +279,13 @@ class DP_REBS_Property {
 	}
 
 	public function save_images() {
-		if ( ! $this->images )
+		if ( $this->id == 0 ) {
 			return $this;
+		}
+
+		if ( ! $this->images ) {
+			return $this;
+		}
 
 		$images = new DP_Save_Images( 'estate_property_images' );
 
@@ -277,8 +302,13 @@ class DP_REBS_Property {
 	}
 
 	public function save_sketches() {
-		if ( ! $this->sketches )
+		if ( $this->id == 0 ) {
 			return $this;
+		}
+
+		if ( ! $this->sketches ) {
+			return $this;
+		}
 
 		$images = new DP_Save_Images( 'estate_property_sketches' );
 

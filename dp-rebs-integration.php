@@ -40,7 +40,8 @@ class DP_REBS extends DP_Plugin {
 	function plugin_init() {
 		$this->prefix = 'dp_rebs';
 		// defaults to 01.01.2015 in unix time
-		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( $this->date_format, 1420070400 ) );
+		//$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( $this->date_format, 1420070400 ) );
+		$this->last_modified = date_i18n( $this->date_format, 1420070400 );
 
 		$url = get_option( 'rebs_api_url', '' );
 		$this->api = new DP_REBS_API( $url );
@@ -186,10 +187,10 @@ class DP_REBS extends DP_Plugin {
 	function save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			$property->set_data($data)->map_fields()->save_object()->save_taxonomy()->save_meta()->save_images()->save_sketches();
+			$property->set_data($data)->map_fields()->save_object()->save_meta()->save_taxonomy()->save_images()->save_sketches();
 		}
-		$this->last_modified = date_i18n( $this->date_format, current_time( 'timestamp' ) );
-		update_option( $this->name( 'last_modified' ), $this->last_modified );
+//		$this->last_modified = date_i18n( $this->date_format, current_time( 'timestamp' ) );
+//		update_option( $this->name( 'last_modified' ), $this->last_modified );
 	}
 
 	function get_schema( $type = 'property' ) {
