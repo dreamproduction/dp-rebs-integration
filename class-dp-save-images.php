@@ -45,8 +45,12 @@ class DP_Save_Images {
             set_post_thumbnail( $element['parent_id'], $image_id );
         }
 
-        if ( $image_id )
-			add_post_meta( $element['parent_id'], $this->name, $image_id, false );
+        $previous_images = get_post_meta( $element['parent_id'], $this->name, false );
+
+        if ( ! in_array( $image_id, $previous_images ) ) {
+            if ( $image_id )
+                add_post_meta( $element['parent_id'], $this->name, $image_id, false );
+        }
 
 		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
 
