@@ -9,6 +9,7 @@ class DP_REBS_Property {
 	public $meta = array();
 	public $taxonomy = array();
 	public $images = array();
+    public $agent = array();
 	public $sketches = array();
 	public $id = 0;
 
@@ -113,6 +114,9 @@ class DP_REBS_Property {
 				case 'sketches' :
 					$this->sketches = $value;
 					break;
+                case 'agent' :
+                    $this->agent = $value;
+                    break;
 				case 'closed_transaction_type' :
 				case 'cut' :
 				case 'availability' :
@@ -141,7 +145,6 @@ class DP_REBS_Property {
 				case 'verbose_floor' :
 				case 'verbose_price' :
 				case 'tags_en' :
-				case 'agent' :
 				case 'residential_complex' :
 				case 'is_available' :
 				case 'description_en' :
@@ -194,6 +197,48 @@ class DP_REBS_Property {
 
 		return $this;
 	}
+
+    public function save_agent() {
+        // no property id? bail
+        if ( $this->id == 0 ) {
+            return $this;
+        }
+
+        // find if user exists
+        $user_exists = new WP_User_Query(
+          array(
+              'meta_key' => 'rebs_id',
+              'meta_value' => $this->agent['id']
+          )
+        );
+
+        if ( $user_exists->get_results() ) {
+            $results = $user_exists->get_results();
+            $user = array_pop($results);
+            $user_id = $user->ID;
+        } else {
+            // if user doesn't exist
+            $user_id = wp_insert_user(
+                array(
+                    'user_login' => $this->agent['email'],
+                    'user_email' => $this->agent['email'],
+                    'first_name' => $this->agent['first_name'],
+                    'last_name' => $this->agent['last_name'],
+                    'role' => 'agent'
+                )
+            );
+
+            add_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+            add_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
+            add_user_meta( $user_id, 'company_name', $this->agent['position'] );
+            add_user_meta( $user_id, 'user_image', $this->agent['avatar'] );
+        }
+
+        // associate user with the property
+        update_post_meta( $this->id, 'estate_property_custom_agent', $user_id );
+
+        return $this;
+    }
 
 	protected function needs_update() {
 		$exists = get_posts(
