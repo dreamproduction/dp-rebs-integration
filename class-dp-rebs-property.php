@@ -64,10 +64,10 @@ class DP_REBS_Property {
 
 			switch ( $key ) {
 				case 'for_rent' :
-					$this->taxonomy['property-status'][] = 'rent';
+					$this->taxonomy['property-status'][] = 'De inchiriat';
 					break;
 				case 'for_sale' :
-					$this->taxonomy['property-status'][] = 'sale';
+					$this->taxonomy['property-status'][] = 'De vanzare';
 					break;
 				case 'city':
 					$this->taxonomy['property-location'][] = $value;
@@ -175,7 +175,7 @@ class DP_REBS_Property {
 		if ( $this->data['lat'] && $this->data['lng'] ) {
 			$this->meta['estate_property_location'] = sprintf( '%s,%s', $this->data['lat'], $this->data['lng'] );
 		}
-		$this->meta['estate_property_address'] = implode( ', ', array_filter( array( $this->data['street'], $this->data['zone'], $this->data['city'] ) ) );
+		$this->meta['estate_property_address'] = implode( ', ', array_filter( array( $this->data['zone'], $this->data['city'] ) ) );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'map fields' );
 		$this->log( $message );
@@ -228,10 +228,10 @@ class DP_REBS_Property {
                 )
             );
 
-            add_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
-            add_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
-            add_user_meta( $user_id, 'company_name', $this->agent['position'] );
-            add_user_meta( $user_id, 'user_image', $this->agent['avatar'] );
+            update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+	        update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
+	        update_user_meta( $user_id, 'company_name', $this->agent['position'] );
+	        update_user_meta( $user_id, 'user_image', $this->agent['avatar'] );
         }
 
         // associate user with the property
