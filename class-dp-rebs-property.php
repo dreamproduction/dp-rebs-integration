@@ -231,7 +231,9 @@ class DP_REBS_Property {
             update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
 	        update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
 	        update_user_meta( $user_id, 'company_name', $this->agent['position'] );
-	        update_user_meta( $user_id, 'user_image', $this->agent['avatar'] );
+			$user_image_id = DP_Save_Images::import_external_image( $this->agent['avatar'], 0 );
+			$user_image = wp_get_attachment_image_src( $user_image_id, 'medium' );
+	        update_user_meta( $user_id, 'user_image', $user_image[0] );
         }
 
         // associate user with the property

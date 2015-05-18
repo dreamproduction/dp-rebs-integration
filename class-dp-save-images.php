@@ -163,7 +163,7 @@ class DP_Save_Images {
 	 *
 	 * @return mixed
 	 */
-	function is_stored_image( $filename ) {
+	static function is_stored_image( $filename ) {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 		return  $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type='attachment'", $filename ));

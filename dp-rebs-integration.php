@@ -10,7 +10,9 @@ Author URI: http://dreamproduction.com
 License: GPL2
 */
 
-include( 'inc/dp-plugin/dp-plugin.php' );
+if ( ! class_exists( 'DP_Plugin' ) ) {
+	include( 'inc/dp-plugin/dp-plugin.php' );
+}
 
 class DP_REBS extends DP_Plugin {
 
