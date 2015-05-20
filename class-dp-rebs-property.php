@@ -12,6 +12,8 @@ class DP_REBS_Property {
     public $agent = array();
 	public $sketches = array();
 	public $id = 0;
+	protected $old_id = 0;
+	protected $old_date = '000-00-00 00:00:00';
 
 	public function __construct( $schema ) {
 		$this->set_schema( $schema )->set_fields_options();
@@ -199,6 +201,13 @@ class DP_REBS_Property {
 	}
 
 	public function force_save_object() {
+		$this->check_existing();
+
+		if ( $this->old_id ) {
+			// wp_insert_post will update if ID present
+			$this->object['ID'] = $this->old_id;
+		}
+
 		// return 0 on failure
 		$this->id = wp_insert_post( $this->object, false );
 
@@ -256,6 +265,21 @@ class DP_REBS_Property {
     }
 
 	protected function needs_update() {
+		$this->check_existing();
+
+		if ( $this->old_id ) {
+			// wp_insert_post will update if ID present
+			$this->object['ID'] = $this->old_id;
+
+			// bail if no update is necessary
+			if ( $this->object['post_date'] == $this->old_date )
+				return false;
+		}
+
+		return true;
+	}
+
+	protected function check_existing() {
 		$exists = get_posts(
 			array(
 				'post_type' => 'property',
@@ -268,15 +292,11 @@ class DP_REBS_Property {
 		);
 
 		if ( $exists ) {
-			// wp_insert_post will update if ID present
-			$this->object['ID'] = $exists[0]->ID;
-
-			// bail if no update is necessary
-			if ( $this->object['post_date'] == $exists[0]->post_date )
-				return false;
+			$this->old_id = $exists[0]->ID;
+			$this->old_date = $exists[0]->post_date;
 		}
 
-		return true;
+		return $this;
 	}
 
 	public function save_taxonomy() {
