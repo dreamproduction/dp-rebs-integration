@@ -228,10 +228,10 @@ class DP_REBS_Property {
 
         // find if user exists
         $user_exists = new WP_User_Query(
-          array(
-              'meta_key' => 'rebs_id',
-              'meta_value' => $this->agent['id']
-          )
+              array(
+                  'meta_key' => 'rebs_id',
+                  'meta_value' => $this->agent['id']
+              )
         );
 
         if ( $user_exists->get_results() ) {
@@ -239,23 +239,37 @@ class DP_REBS_Property {
             $user = array_pop($results);
             $user_id = $user->ID;
         } else {
-            // if user doesn't exist
-            $user_id = wp_insert_user(
-                array(
-                    'user_login' => $this->agent['email'],
-                    'user_email' => $this->agent['email'],
-                    'first_name' => $this->agent['first_name'],
-                    'last_name' => $this->agent['last_name'],
-                    'role' => 'agent'
-                )
-            );
+            // if user doesn't exist --- the user don't have rebs_id
+            //check if email user exists
+            $actual_user = get_user_by('email', $this->agent['email']);
 
-            update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
-	        update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
-	        update_user_meta( $user_id, 'company_name', $this->agent['position'] );
-			$user_image_id = DP_Save_Images::import_external_image( $this->agent['avatar'], 0 );
-			$user_image = wp_get_attachment_image_src( $user_image_id, 'medium' );
-	        update_user_meta( $user_id, 'user_image', $user_image[0] );
+            if ( $actual_user ) {
+                $user_id = $actual_user->ID;
+
+                update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+                update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
+                update_user_meta( $user_id, 'company_name', $this->agent['position'] );
+                $user_image_id = DP_Save_Images::import_external_image( $this->agent['avatar'], 0 );
+                $user_image = wp_get_attachment_image_src( $user_image_id, 'medium' );
+                update_user_meta( $user_id, 'user_image', $user_image[0] );
+            } else {
+                $user_id = wp_insert_user(
+                    array(
+                        'user_login' => $this->agent['first_name'] . " " . $this->agent['last_name'],
+                        'user_email' => $this->agent['email'],
+                        'first_name' => $this->agent['first_name'],
+                        'last_name' => $this->agent['last_name'],
+                        'role' => 'agent'
+                    )
+                );
+
+                update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+                update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
+                update_user_meta( $user_id, 'company_name', $this->agent['position'] );
+                $user_image_id = DP_Save_Images::import_external_image( $this->agent['avatar'], 0 );
+                $user_image = wp_get_attachment_image_src( $user_image_id, 'medium' );
+                update_user_meta( $user_id, 'user_image', $user_image[0] );
+            }
         }
 
         // associate user with the property
