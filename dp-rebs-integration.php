@@ -183,6 +183,8 @@ class DP_REBS extends DP_Plugin {
 
 	function set_api_data_single( $id ) {
 		$property_id = get_post_meta( $id, 'estate_property_id', true );
+        // the id is stored as CPxxxx where xxxx is the REBS actual id.
+        $property_id = str_replace( 'CP', '', $property_id );
 		$this->api_data = $this->api->set_url( 'single', $property_id )->call()->store()->walk()->return_data();
 	}
 
