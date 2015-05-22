@@ -226,7 +226,7 @@ class DP_REBS_Property {
             return $this;
         }
 
-        // find if user exists
+        // find if agent exists
         $user_exists = new WP_User_Query(
               array(
                   'meta_key' => 'rebs_id',
@@ -238,10 +238,22 @@ class DP_REBS_Property {
             $results = $user_exists->get_results();
             $user = array_pop($results);
             $user_id = $user->ID;
+
+            //check if agent changed his email address
+            $actual_user = get_user_by('id', $user_id);
+
+            if ( $actual_user->user_email !=  $this->agent['email'] ) {
+                wp_update_user(
+                    array(
+                        'ID' => $user_id,
+                        'user_email' => $this->agent['email']
+                    )
+                );
+            }
         } else {
-            // if user doesn't exist --- the user don't have rebs_id
-            //check if email user exists
-            $actual_user = get_user_by('email', $this->agent['email']);
+            // if agent doesn't exist --- the agent don't have rebs_id
+            //check if email agent exists
+            $actual_user = get_user_by( 'email', $this->agent['email'] );
 
             if ( $actual_user ) {
                 $user_id = $actual_user->ID;
@@ -253,6 +265,7 @@ class DP_REBS_Property {
                 $user_image = wp_get_attachment_image_src( $user_image_id, 'medium' );
                 update_user_meta( $user_id, 'user_image', $user_image[0] );
             } else {
+                //new agent
                 $user_id = wp_insert_user(
                     array(
                         'user_login' => $this->agent['first_name'] . " " . $this->agent['last_name'],
@@ -272,8 +285,11 @@ class DP_REBS_Property {
             }
         }
 
-        // associate user with the property
+        // associate agent with the property
         update_post_meta( $this->id, 'estate_property_custom_agent', $user_id );
+
+        $message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->agent ) );
+        $this->log( $message );
 
         return $this;
     }
