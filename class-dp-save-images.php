@@ -52,6 +52,23 @@ class DP_Save_Images {
                 add_post_meta( $element['parent_id'], $this->name, $image_id, false );
         }
 
+		if ( class_exists('Sitepress') ) {
+			global $sitepress;
+
+			$translated_ids = $sitepress->get_element_translations( $element['parent_id'], 'post_property' );
+			foreach ( $translated_ids as $translated_id ) {
+				$translated_prev_images = get_post_meta( $translated_id, $this->name, false );
+				if ( ! in_array( $image_id, $translated_prev_images ) ) {
+					if ( $image_id )
+						add_post_meta( $translated_id, $this->name, $image_id, false );
+				}
+			}
+		}
+
+
+
+
+
 		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
 
 		return $this;

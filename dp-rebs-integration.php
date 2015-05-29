@@ -191,16 +191,14 @@ class DP_REBS extends DP_Plugin {
 	function save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			$property->set_data($data)->map_fields()->save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches();
+			$property->set_data($data)->map_fields()->save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
 		}
-//		$this->last_modified = date_i18n( $this->date_format, current_time( 'timestamp' ) );
-//		update_option( $this->name( 'last_modified' ), $this->last_modified );
 	}
 
 	function force_save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			$property->set_data($data)->map_fields()->force_save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches();
+			$property->set_data($data)->map_fields()->force_save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
 		}
 	}
 

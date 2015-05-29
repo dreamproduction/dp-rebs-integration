@@ -187,11 +187,7 @@ class DP_REBS_Property {
 
 	public function save_object() {
 		if ( $this->needs_update() ) {
-			// return 0 on failure
-			$this->id = wp_insert_post( $this->object, false );
-
-			// save ID as early as possible to avoid duplicates
-			add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
+			$this->_insert();
 		}
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
@@ -208,14 +204,39 @@ class DP_REBS_Property {
 			$this->object['ID'] = $this->old_id;
 		}
 
-		// return 0 on failure
+		$this->_insert();
+
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
+		$this->log( $message );
+
+		return $this;
+	}
+
+	protected function _insert() {
+		// actual insert. returns 0 on failure
 		$this->id = wp_insert_post( $this->object, false );
+
+		// translate in all other languages if WPML active
+		if ( function_exists( 'icl_makes_duplicates' ) ) {
+			icl_makes_duplicates( $this->id );
+		}
 
 		// save ID as early as possible to avoid duplicates
 		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
 
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
-		$this->log( $message );
+		return $this;
+	}
+
+	public function maybe_translate() {
+		// no property id? bail
+		if ( $this->id == 0 ) {
+			return $this;
+		}
+
+		// translate in all other languages if WPML active
+		if ( function_exists( 'icl_makes_duplicates' ) ) {
+			icl_makes_duplicates( $this->id );
+		}
 
 		return $this;
 	}
