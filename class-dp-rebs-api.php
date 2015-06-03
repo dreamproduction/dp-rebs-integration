@@ -65,7 +65,7 @@ class DP_REBS_API {
 	}
 
 	function walk() {
-		$walk_url = isset( $this->current_data['meta']['next'] ) ? $this->current_data['meta']['next'] : '';
+		$walk_url = isset( $this->current_data['meta']['next'] ) ? $this->base . $this->current_data['meta']['next'] : '';
 
 		while ( $walk_url ) {
 			$this->set_url( $walk_url )->call()->store();
