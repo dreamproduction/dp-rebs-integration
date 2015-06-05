@@ -104,11 +104,20 @@ class DP_REBS_Property {
 				case 'comfort' :
 				case 'construction_status' :
 				case 'floor' :
+				case 'commercial_building_type' :
+				case 'office_class':
+				case 'pedestrian_traffic' :
+				case 'land_classification' :
 				case 'house_type' :
 					$this->meta['estate_property_' . $key] = $this->get_field_option( (string) $key, (string) $value );
 					break;
 				case 'date_modified_by_user':
 					$this->object['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
+					break;
+				case 'destination' :
+					foreach( $value as $v ) {
+						$this->meta['estate_property_' . $key] = $v;
+					}
 					break;
 				case 'full_images' :
 					$this->images = $value;
@@ -142,8 +151,6 @@ class DP_REBS_Property {
 				case 'vat' :
 				case 'vat_rent' :
 				case 'vat_sale' :
-				case 'zero_commission_rent' :
-				case 'zero_commission_sale' :
 				case 'verbose_floor' :
 				case 'verbose_price' :
 				case 'tags_en' :
@@ -159,7 +166,7 @@ class DP_REBS_Property {
 					// handled differently or not needed
 					break;
 				default:
-					if ( is_string( $value ) || is_scalar( $value ) ) {
+					if ( is_string( $value ) || is_scalar( $value ) || is_bool( $value ) ) {
 						$this->meta[ 'estate_property_' . $key ] = (string) $value;
 					} else {
 						// ignore extra arrays added to API
