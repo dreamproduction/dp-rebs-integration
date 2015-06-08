@@ -192,6 +192,21 @@ class DP_REBS_Property {
 		return $this;
 	}
 
+	public function delete_object() {
+		$this->check_existing();
+
+		if ( $this->old_id ) {
+			wp_delete_post( $this->old_id, true );
+
+			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'delete_post' );
+			$this->log( $message );
+		} else {
+			$message = sprintf( '%s, Time - %s, Objects - %s, Failed, no post id', __METHOD__, timer_stop(), 'delete_post' );
+			$this->log( $message );
+		}
+
+	}
+
 	public function save_object() {
 		if ( $this->needs_update() ) {
 			$this->_insert();
@@ -357,6 +372,17 @@ class DP_REBS_Property {
 		return $this;
 	}
 
+	public function clean_taxonomy() {
+		if ( $this->id == 0 ) {
+			return $this;
+		}
+
+		$taxonomies = array_keys( $this->taxonomy );
+		wp_delete_object_term_relationships( $this->id, $taxonomies );
+
+		return $this;
+	}
+
 	public function save_taxonomy() {
 		if ( $this->id == 0 ) {
 			return $this;
@@ -396,6 +422,21 @@ class DP_REBS_Property {
 		}
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->taxonomy ) );
+		$this->log( $message );
+
+		return $this;
+	}
+
+	public function clean_meta() {
+		if ( $this->id == 0 ) {
+			return $this;
+		}
+
+		foreach ( $this->meta as $key => $meta_value ) {
+			delete_post_meta( $this->id, $key );
+		}
+
+		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
 		$this->log( $message );
 
 		return $this;
