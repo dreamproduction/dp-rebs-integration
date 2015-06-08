@@ -85,6 +85,9 @@ class DP_REBS_API {
 
 		if ( $response['response']['code'] == 200 ) {
 			$this->current_data = json_decode( $response['body'], true );
+		} else {
+			// false for 404 and anything else
+			$this->current_data = false;
 		}
 
 		return $this;
