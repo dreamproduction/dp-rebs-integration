@@ -35,6 +35,8 @@ class DP_REBS extends DP_Plugin {
 	 */
 	public $api;
 	public $api_data = array();
+	public $api_id;
+	public $virtual_page = 'rebs-hook';
 
 	/**
 	 * Main plugin method. Called right after auto-loader.
@@ -45,29 +47,41 @@ class DP_REBS extends DP_Plugin {
 		$url = get_option( 'rebs_api_url', '' );
 		$this->api = new DP_REBS_API( $url );
 
-		// set cron via activation
-		// set cron action
+		// enable custom fields for debug
 		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
 
 		// An option in general settings
 		add_action( 'admin_init', array( $this, 'setup_plugin_options' ), 11 );
 
+		// Handle redirect endpoints
 		add_action( 'init', array( $this, 'add_endpoint' ) );
 		add_action( 'template_redirect', array( $this, 'endoint_redirect' ) );
+
+		add_action( 'parse_request', array( $this, 'add_listner' ), 5 );
 
 		new DP_Parallel();
 	}
 
+	/**
+	 * Add custom fields for properties in debug mode
+	 */
+	function property_meta() {
+		if ( defined('WP_DEBUG') && WP_DEBUG )
+			add_post_type_support( 'property', 'custom-fields' );
+	}
+
+
+	/**
+	 * Add endpoint to rewrite rules
+	 */
 	function add_endpoint() {
-		//
+		// add endpoint for root domain
 		add_rewrite_endpoint( $this->endpoint, EP_ROOT );
 	}
 
-
-	function property_meta() {
-		add_post_type_support( 'property', 'custom-fields' );
-	}
-
+	/**
+	 * Handle redirects on endpoint
+	 */
 	function endoint_redirect() {
 		global $wp_query;
 
@@ -118,29 +132,36 @@ class DP_REBS extends DP_Plugin {
 		include( 'views/options.php' );
 	}
 
-	function set_api_data_everything() {
-		$this->api_data = $this->api->set_url( 'list_since', $this->last_modified )->call()->store()->walk()->return_data();
-	}
+	function add_listner( $query ) {
+		if ( $query->request == $this->virtual_page ) {
 
-	function set_api_data_single( $id ) {
-		$property_id = get_post_meta( $id, 'estate_property_id', true );
-        // the id is stored as CPxxxx where xxxx is the REBS actual id.
-        $property_id = str_replace( 'CP', '', $property_id );
-		$this->api_data = $this->api->set_url( 'single', $property_id )->call()->store()->walk()->return_data();
-	}
+			if ( isset( $_REQUEST['property_id'] ) ) {
+				$this->api_id = absint( $_REQUEST['property_id'] );
 
-	function save_api_data() {
-		foreach( $this->api_data as $data ) {
-			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			$property->set_data($data)->map_fields()->save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
+				$this->set_api_data_single( $this->api_id );
+				$this->force_save_api_data();
+			} else {
+				_e('No property id');
+				die;
+			}
 		}
-		update_option( $this->name( 'last_modified' ), date_i18n( $this->date_format, current_time('timestamp') ) );
+	}
+
+	function set_api_data_single( $api_id ) {
+		$this->api_data = $this->api->set_url( 'single', $api_id )->call()->store()->return_data();
 	}
 
 	function force_save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			$property->set_data($data)->map_fields()->force_save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
+			if ( $data == false ) {
+				// set id for mapping
+				$data['id'] = $this->api_id;
+				$property->set_data($data)->map_fields()->delete_object();
+			} else {
+				$property->set_data($data)->map_fields()->force_save_object()->save_agent()->clean_meta()->save_meta()->clean_taxonomy()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
+
+			}
 		}
 	}
 
@@ -156,11 +177,6 @@ class DP_REBS extends DP_Plugin {
 		}
 
 		return $data;
-	}
-
-	function update_from_api() {
-		$this->set_api_data_everything();
-		$this->save_api_data();
 	}
 
 }
