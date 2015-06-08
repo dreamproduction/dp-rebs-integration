@@ -41,18 +41,12 @@ class DP_REBS extends DP_Plugin {
 	 */
 	function plugin_init() {
 		$this->prefix = 'dp_rebs';
-		// defaults to 01.01.2015 in unix time
-		$this->last_modified = get_option( $this->name( 'last_modified' ), date_i18n( $this->date_format, 1420070400 ) );
-		//$this->last_modified = date_i18n( $this->date_format, 1420070400 );
 
 		$url = get_option( 'rebs_api_url', '' );
 		$this->api = new DP_REBS_API( $url );
 
 		// set cron via activation
 		// set cron action
-		add_action( 'dp_hourly', array( $this, 'update_from_api' ) );
-		add_action( 'admin_bar_menu', array( $this, 'menu_buttons' ) );
-		add_action( 'init', array( $this, 'handle_menu_actions' ), 99 );
 		add_action( 'admin_init', array( $this, 'property_meta' ), 12 );
 
 		// An option in general settings
@@ -109,41 +103,6 @@ class DP_REBS extends DP_Plugin {
 		exit;
 	}
 
-	function menu_buttons( $wp_admin_bar ) {
-		// Template name
-		$wp_admin_bar->add_node(
-			array(
-				'id'		=> $this->name( 'update' ),
-				'title'		=> __( 'REBS: Update all', 'dp' ),
-				'href'		=> add_query_arg( $this->name( 'update' ), 'everything', admin_url( 'index.php' ) ),
-			)
-		);
-
-		if ( is_singular( 'property' ) ) {
-			$wp_admin_bar->add_node(
-				array(
-					'id'		=> $this->name( 'update' ),
-					'title'		=> __( 'REBS: Update this', 'dp' ),
-					'href'		=> add_query_arg( $this->name( 'update' ), get_the_ID(), $this->get_current_url() ),
-				)
-			);
-		}
-
-		if ( is_admin() ) {
-			$screen = get_current_screen();
-			if ( $screen->base == 'post'  && $screen->post_type == 'property' ) {
-				$wp_admin_bar->add_node(
-					array(
-						'id'		=> $this->name( 'update' ),
-						'title'		=> __( 'REBS: Update this', 'dp' ),
-						'href'		=> add_query_arg( $this->name( 'update' ), get_the_ID(), get_edit_post_link( get_the_ID() ) ),
-					)
-				);
-			}
-		}
-
-	}
-
 	/**
 	 * Register fields for general options page.
 	 */
@@ -157,24 +116,6 @@ class DP_REBS extends DP_Plugin {
 	 */
 	function display_options() {
 		include( 'views/options.php' );
-	}
-
-	function handle_menu_actions() {
-
-		if ( ! isset( $_GET[ $this->name('update') ] ) )
-			return;
-
-		$what = $_GET[ $this->name('update') ];
-
-		if ( $what == 'everything' ) {
-			$this->set_api_data_everything();
-		}
-
-		if ( is_numeric($what) ) {
-			$this->set_api_data_single( $what );
-		}
-
-		$this->force_save_api_data();
 	}
 
 	function set_api_data_everything() {
@@ -222,14 +163,6 @@ class DP_REBS extends DP_Plugin {
 		$this->save_api_data();
 	}
 
-	static function set_cron() {
-		wp_schedule_event( time(), 'hourly', 'dp_hourly' );
-	}
-
-	static function clear_cron() {
-		wp_clear_scheduled_hook( 'dp_hourly' );
-	}
-
 }
 
 
@@ -246,5 +179,3 @@ function dp_rebs() {
 
 // fire plugin after theme
 add_action( 'after_setup_theme', 'dp_rebs', 5 );
-register_activation_hook( __FILE__, array( dp_rebs(), 'set_cron' ) );
-register_deactivation_hook( __FILE__, array( dp_rebs(), 'clear_cron' ) );
