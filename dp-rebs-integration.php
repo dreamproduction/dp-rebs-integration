@@ -59,7 +59,7 @@ class DP_REBS extends DP_Plugin {
 
 		add_action( 'parse_request', array( $this, 'add_listner' ), 5 );
 
-		add_action( 'pmxi_gallery_image', array( $this, 'save_images_from_import' ) );
+		add_action( 'pmxi_gallery_image', array( $this, 'save_images_from_import' ), 10, 2 );
 
 		new DP_Parallel();
 	}
