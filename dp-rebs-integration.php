@@ -59,7 +59,13 @@ class DP_REBS extends DP_Plugin {
 
 		add_action( 'parse_request', array( $this, 'add_listner' ), 5 );
 
+		add_action( 'pmxi_gallery_image', array( $this, 'save_images_from_import' ) );
+
 		new DP_Parallel();
+	}
+
+	function save_images_from_import( $post_id, $image_id ) {
+		add_post_meta( $post_id, 'estate_property_images', $image_id );
 	}
 
 	/**
