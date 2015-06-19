@@ -140,15 +140,14 @@ class DP_REBS extends DP_Plugin {
 
 	function add_listner( $query ) {
 		if ( $query->request == $this->virtual_page ) {
+			$this->log( 'Update hook hit' );
 
 			if ( isset( $_REQUEST['property_id'] ) ) {
 				$this->api_id = absint( $_REQUEST['property_id'] );
+				$this->log( 'Update hook hit with id:' .  $this->api_id );
 
 				$this->set_api_data_single( $this->api_id );
 				$this->force_save_api_data();
-
-				$message = sprintf( '%s, Update for %s', __METHOD__, $this->api_id );
-				$this->log( $message );
 			} else {
 				_e('No property id');
 				die;
