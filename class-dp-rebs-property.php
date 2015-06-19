@@ -240,7 +240,7 @@ class DP_REBS_Property {
 
 		// translate in all other languages if WPML active
 		if ( function_exists( 'icl_makes_duplicates' ) ) {
-			icl_makes_duplicates( $this->id );
+			// icl_makes_duplicates( $this->id );
 		}
 
 		// save ID as early as possible to avoid duplicates
@@ -257,7 +257,7 @@ class DP_REBS_Property {
 
 		// translate in all other languages if WPML active
 		if ( function_exists( 'icl_makes_duplicates' ) ) {
-			icl_makes_duplicates( $this->id );
+			// icl_makes_duplicates( $this->id );
 		}
 
 		return $this;
