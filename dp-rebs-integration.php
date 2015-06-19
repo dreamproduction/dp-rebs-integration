@@ -146,6 +146,9 @@ class DP_REBS extends DP_Plugin {
 
 				$this->set_api_data_single( $this->api_id );
 				$this->force_save_api_data();
+
+				$message = sprintf( '%s, Update for %s', __METHOD__, $this->api_id );
+				$this->log( $message );
 			} else {
 				_e('No property id');
 				die;
@@ -185,6 +188,14 @@ class DP_REBS extends DP_Plugin {
 		return $data;
 	}
 
+	/**
+	 * @param string $message
+	 */
+	function log( $message ) {
+		$upload_dir = wp_upload_dir();
+		$date = date_i18n( 'Y-m-d H:i:s' ) . " | ";
+		error_log( $date . $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
+	}
 }
 
 
