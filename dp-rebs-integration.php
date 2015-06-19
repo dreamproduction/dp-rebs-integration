@@ -95,13 +95,16 @@ class DP_REBS extends DP_Plugin {
 		if ( ! isset( $wp_query->query_vars[ $this->endpoint ] ) )
 			return;
 
+		$p_id = str_ireplace( 'cp', '', $wp_query->query_vars[ $this->endpoint ] );
+		$m_id = 'CP' . $p_id;
+
 		// search a property with queried ID
 		$exists = get_posts(
 			array(
 				'post_type' => 'property',
 				'suppress_filters' => false,
 				'meta_key' => 'estate_property_id',
-				'meta_value' => $wp_query->query_vars[ $this->endpoint ],
+				'meta_value' => $m_id,
 				'posts_per_page' => 1
 			)
 		);
