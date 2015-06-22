@@ -433,6 +433,9 @@ class DP_REBS_Property {
 			delete_post_meta( $this->id, $key );
 		}
 
+		// also clear images
+		delete_post_meta( $this->id, 'estate_property_images' );
+
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
 		$this->log( $message );
 

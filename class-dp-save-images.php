@@ -52,7 +52,7 @@ class DP_Save_Images {
                 add_post_meta( $element['parent_id'], $this->name, $image_id, false );
         }
 
-		if ( class_exists('Sitepress') ) {
+/*		if ( class_exists('Sitepress') ) {
 			global $sitepress;
 
 			$translated_ids = $sitepress->get_element_translations( $element['parent_id'], 'post_property' );
@@ -63,7 +63,7 @@ class DP_Save_Images {
 						add_post_meta( $translated_id, $this->name, $image_id, false );
 				}
 			}
-		}
+		}*/
 
 
 
