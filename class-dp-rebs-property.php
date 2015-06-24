@@ -392,17 +392,27 @@ class DP_REBS_Property {
 					$to_insert = array();
 					foreach ( $terms as $parent => $term_array ) {
 						$term_to_insert = $parent;
-						if ( !$term_info = term_exists($parent, $taxonomy) ) {
-							$result = wp_insert_term( $parent, $taxonomy);
-							$term_info = $term_to_insert = $result['term_id'];
+						if ( !$parent_id = term_exists($parent, $taxonomy) ) {
+							$parent_result = wp_insert_term( $parent, $taxonomy);
+							$parent_id = $term_to_insert = $parent_result['term_id'];
 						}
 						$to_insert[] = $term_to_insert;
 
 						foreach ( $term_array as $term ) {
 							$term_to_insert = $term;
-							if ( ! term_exists($term, $taxonomy) ) {
-								$result = wp_insert_term( $term, $taxonomy, array( 'parent' => $term_info ));
-								$term_to_insert = $result['term_id'];
+							$parent_slug = get_term_field( 'slug', $parent_id, $taxonomy );
+							$alt_slug = sprintf( '%s-%s', $term, $parent_slug );
+
+							// try slug-parent-slug first, as many terms are used under multiple parents
+							if ( $alt_result = term_exists( $alt_slug, $taxonomy ) ) {
+								// slug-parent-slug
+								$term_to_insert = $alt_result['term_id'];
+							} else {
+								// verify if exists, add it if not
+								if ( ! term_exists($term, $taxonomy) ) {
+									$result = wp_insert_term( $term, $taxonomy, array( 'parent' => $parent_id ));
+									$term_to_insert = $result['term_id'];
+								}
 							}
 
 							$to_insert[] = $term_to_insert;
