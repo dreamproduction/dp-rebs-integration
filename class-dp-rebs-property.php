@@ -397,7 +397,7 @@ class DP_REBS_Property {
 						}
 
 
-						$to_insert[] = $parent_id = $parent_result['term_id'];
+						$to_insert[] = $parent_id = absint($parent_result['term_id']);
 
 						$this->log( 'tax: parent ok. slug:' . $parent . ' id:' . $parent_id );
 
@@ -409,13 +409,13 @@ class DP_REBS_Property {
 							// try slug-parent-slug first, as many terms are used under multiple parents
 							if ( $alt_result = term_exists( $term, $taxonomy, $parent_id ) ) {
 								// slug-parent-slug
-								$term_to_insert = $alt_result['term_id'];
+								$term_to_insert = absint($alt_result['term_id']);
 
 								$this->log( 'tax: child term exists:' . $term . ' id: ' . $term_to_insert );
 							} else {
 								// verify if exists, add it if not
 								$result = wp_insert_term( $term, $taxonomy, array( 'parent' => $parent_id ));
-								$term_to_insert = $result['term_id'];
+								$term_to_insert = absint($result['term_id']);
 
 								$this->log( 'tax: child term inserted:' . $term . ' id: ' . $term_to_insert );
 							}
