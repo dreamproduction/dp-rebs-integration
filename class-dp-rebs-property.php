@@ -391,15 +391,13 @@ class DP_REBS_Property {
 				if ( is_array( $terms )) {
 					$to_insert = array();
 					foreach ( $terms as $parent => $term_array ) {
-						$term_to_insert = $parent;
-						if ( !$parent_id = term_exists($parent, $taxonomy) ) {
+						if ( !$parent_result = term_exists($parent, $taxonomy) ) {
 							$parent_result = wp_insert_term( $parent, $taxonomy);
-							$parent_id = $term_to_insert = $parent_result['term_id'];
 						}
-						$to_insert[] = $term_to_insert;
+
+						$to_insert[] = $parent_id = $parent_result['term_id'];
 
 						foreach ( $term_array as $term ) {
-							$term_to_insert = $term;
 
 							// try slug-parent-slug first, as many terms are used under multiple parents
 							if ( $alt_result = term_exists( $term, $taxonomy, $parent_id ) ) {
