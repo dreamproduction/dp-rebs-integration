@@ -12,11 +12,11 @@ class DP_Save_Images {
 		$this->set_data();
 	}
 
-	public function add( $url, $parent_id ) {
+	public function add( $url, $parent_id, $index = null ) {
 		// put key the filename for easier array_unique
 		$parts = parse_url( $url );
 		$key = basename( $parts['path'] );
-		$this->data[$key] = array( 'key' => $key, 'url' => $url, 'parent_id' => $parent_id );
+		$this->data[$key] = array( 'key' => $key, 'url' => $url, 'parent_id' => $parent_id, 'index' => $index );
 		$this->later_actions[$key] = array( __CLASS__, 'save', $this->name, $this->data[$key] );
 		return $this;
 	}
@@ -45,12 +45,29 @@ class DP_Save_Images {
             set_post_thumbnail( $element['parent_id'], $image_id );
         }
 
-        $previous_images = get_post_meta( $element['parent_id'], $this->name, false );
+		if ( ! $image_id )
+			return $this;
 
-        if ( ! in_array( $image_id, $previous_images ) ) {
-            if ( $image_id )
-                add_post_meta( $element['parent_id'], $this->name, $image_id, false );
+		// will always return array
+        $previous_images = get_post_meta( $element['parent_id'], $this->name, false );
+		// make a copy for extra checks
+		$new_images = $previous_images;
+		// use array_search instead of in_array for indexing later
+		$pos_old_images = array_search( $image_id, $previous_images );
+
+		// just position is changed, unset old pos
+        if ( $pos_old_images !== false ) {
+	        unset( $new_images[$pos_old_images] );
         }
+
+		// save with position if needed
+		if ( $element['index'] )
+			$new_images[$element['index']] = $image_id;
+		else
+			$new_images[] = $image_id;
+
+		update_post_meta( $element['parent_id'], $this->name, $new_images, $previous_images );
+
 
 /*		if ( class_exists('Sitepress') ) {
 			global $sitepress;

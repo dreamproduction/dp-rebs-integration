@@ -449,7 +449,7 @@ class DP_REBS_Property {
 		}
 
 		// also clear images
-		delete_post_meta( $this->id, 'estate_property_images' );
+		delete_post_meta( $this->id, 'estate_property_gallery' );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
 		$this->log( $message );
@@ -481,10 +481,10 @@ class DP_REBS_Property {
 			return $this;
 		}
 
-		$images = new DP_Save_Images( 'estate_property_images' );
+		$images = new DP_Save_Images( 'estate_property_gallery' );
 
-		foreach ( $this->images as $image_url ) {
-			$images->add( $image_url, $this->id );
+		foreach ( $this->images as $index => $image_url ) {
+			$images->add( $image_url, $this->id, $index );
 		}
 
 		$images->store_data()->save_later();
