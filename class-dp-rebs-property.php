@@ -78,9 +78,12 @@ class DP_REBS_Property {
 					$this->taxonomy['property-location'][] = $value;
 					break;
 				case 'property_type':
-					$this->taxonomy['property-type'] = $this->get_field_option( (string) $key, (string) $value );
+					if ( $value != 6 ) {
+						/* 6 == Teren */
+						$this->taxonomy['property-type'] = $this->get_field_option( (string) $key, (string) $value );
+					}
 					break;
-				case 'tags' :
+				case 'tags':
 					$this->taxonomy['property-features'] = $value;
 					break;
 				case 'title':
@@ -114,9 +117,16 @@ class DP_REBS_Property {
 				case 'date_modified_by_user':
 					$this->object['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
-				case 'destination' :
-					foreach( $value as $v ) {
-						$this->meta['estate_property_' . $key] = $v;
+				case 'destination':
+					if( $this->data['property_type'] == 6 ) {
+						/* 6 == Teren */
+						foreach( $value as $v ) {
+							$this->taxonomy['property-type'][] = 'Teren ' . $v;
+						}
+					} else {
+						foreach( $value as $v ) {
+							$this->meta['estate_property_' . $key] = $v;
+						}
 					}
 					break;
 				case 'full_images' :
