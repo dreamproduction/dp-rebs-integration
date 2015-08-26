@@ -49,7 +49,7 @@ class DP_Save_Images {
 			return $this;
 
 		// will always return array
-        $previous_images = get_post_meta( $element['parent_id'], $this->name, false );
+        $previous_images = get_post_meta( $element['parent_id'], $this->name, true );
 		// make a copy for extra checks
 		$new_images = $previous_images;
 		// use array_search instead of in_array for indexing later
@@ -66,7 +66,7 @@ class DP_Save_Images {
 		else
 			$new_images[] = $image_id;
 
-		update_post_meta( $element['parent_id'], $this->name, $new_images, $previous_images );
+		update_post_meta( $element['parent_id'], $this->name, $new_images );
 
 
 /*		if ( class_exists('Sitepress') ) {
