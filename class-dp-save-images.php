@@ -30,14 +30,12 @@ class DP_Save_Images {
 
 	public function save( $element ) {
 
-		$this->set_data();
-
 		if ( ! $element || ! isset( $this->data[ $element['key'] ] ) ) {
+			$this->log('bail early: ' . $element['key']);
 			return $this;
 		}
 
 		$this->remove( $element['key'] );
-		$this->store_data();
 
 		$image_id = self::import_external_image( $element['url'], $element['parent_id'] );
 
@@ -45,11 +43,17 @@ class DP_Save_Images {
             set_post_thumbnail( $element['parent_id'], $image_id );
         }
 
-		if ( ! $image_id )
+		if ( ! $image_id ) {
+			$this->log( 'no image id, image not imported' );
 			return $this;
+		}
 
 		// will always return array
         $previous_images = get_post_meta( $element['parent_id'], $this->name, true );
+
+		if ( empty( $previous_images ) )
+			$previous_images = array();
+
 		// make a copy for extra checks
 		$new_images = $previous_images;
 		// use array_search instead of in_array for indexing later
@@ -67,24 +71,6 @@ class DP_Save_Images {
 			$new_images[] = $image_id;
 
 		update_post_meta( $element['parent_id'], $this->name, $new_images );
-
-
-/*		if ( class_exists('Sitepress') ) {
-			global $sitepress;
-
-			$translated_ids = $sitepress->get_element_translations( $element['parent_id'], 'post_property' );
-			foreach ( $translated_ids as $translated_id ) {
-				$translated_prev_images = get_post_meta( $translated_id, $this->name, false );
-				if ( ! in_array( $image_id, $translated_prev_images ) ) {
-					if ( $image_id )
-						add_post_meta( $translated_id, $this->name, $image_id, false );
-				}
-			}
-		}*/
-
-
-
-
 
 		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
 
@@ -177,7 +163,7 @@ class DP_Save_Images {
 	function log( $message ) {
 		$upload_dir = wp_upload_dir();
 		$date = date_i18n( 'Y-m-d H:i:s' ) . " | ";
-		error_log( $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
+		error_log( $date . $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
 	}
 
 	static function is_valid_image( $filename ) {

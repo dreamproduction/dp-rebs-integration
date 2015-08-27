@@ -161,6 +161,8 @@ class DP_REBS extends DP_Plugin {
 
 				$this->set_api_data_single( $this->api_id );
 				$this->force_save_api_data();
+				_e('Saved');
+				die;
 			} else {
 				_e('No property id');
 				die;
