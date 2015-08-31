@@ -101,6 +101,9 @@ class DP_REBS_Property {
 				case 'surface_built' :
 					$this->meta['estate_property_size'] = (string) $value;
 					break;
+				case 'print_url' :
+					$this->meta['estate_print_url'] = (string) $value;
+					break;
 				case 'partitioning' :
 				case 'apartment_type' :
 				case 'building_structure' :
@@ -155,7 +158,6 @@ class DP_REBS_Property {
 				case 'promote_external' :
 				case 'promote_featured' :
 				case 'promote_flags' :
-				case 'print_url' :
 				case 'resource_uri' :
 				case 'similar_properties' :
 				case 'vat' :
