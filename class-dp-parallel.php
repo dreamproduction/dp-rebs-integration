@@ -4,139 +4,86 @@ class DP_Parallel {
 	var $url = '';
 	var $args = array();
 	var $target;
+	var $listen = 'dp_rebs_get_parallel';
 
 	function __construct() {
-		$this->receive_page = 'dp-parallel-page-receive';
-		$this->send_page = 'dp-parallel-page-send';
 		$this->receive_action = 'dp-parallel-action-receive';
-		$this->send_action = 'dp-parallel-action-send';
 		$this->queue = get_option( 'dp_later', array() );
 
-		define( 'DP_PARALLEL_SEND', false );
+		/*
+		 * init
+		 * queue?
+		 * send request
+		 *
+		 */
 
-		add_action( 'init', array( $this, 'send' ), 205 );
-		add_action( 'init', array( $this, 'receive' ), 204 );
-
-		add_filter( 'cron_schedules', array( $this, 'add_schedule_interval' ) );
-
-		if ( ! wp_next_scheduled( 'dp_parallel_init' ) ) {
-			wp_schedule_event( time(), 'minutely', 'dp_parallel_init' );
-		}
-
-		add_action( 'dp_parallel_init', array( $this, 'init' ) );
-
+		add_action( 'parse_request', array( $this, 'add_listner' ), 6 );
+		add_action( 'parse_request', array( $this, 'send_stuff' ), 299 );
 	}
 
-	function add_schedule_interval( $intervals ) {
-		$intervals['minutely'] = array( 'interval' => 60, 'display' => __( 'Every minute', 'dp' ) );
-		return $intervals;
+	function add_listner( $query ) {
+
+		if ( $query->request == $this->listen ) {
+
+			if ( isset( $_REQUEST['job'] ) && $_REQUEST['dp_action'] == $this->receive_action ) {
+				$call = $_REQUEST['job'];
+
+				$this->log( 'Running parallel save for :' .  $call[3]['key'] );
+
+				// instantiate a new object with params for __construct & call method
+				$obj = new $call[0]( $call[2] );
+				$obj->{$call[1]}( $call[3] );
+
+				_e('Saved stuff');
+				echo $call[3]['key'];
+				die;
+
+			} else {
+				_e('No parallel job received');
+				die;
+			}
+		}
 	}
 
-	function init() {
-
-		$upload_dir = wp_upload_dir();
-
-		$fp = fopen( trailingslashit( $upload_dir['basedir'] ) . "dp_parallel.lock", "w" ); // open it for WRITING ("w")
-
-		// get lock non blocking, return false if lock can not be acquired
-		if( ! flock($fp, LOCK_EX | LOCK_NB )) {
-			$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Cron already running' );
-			$this->log( $message );
+	function send_stuff() {
+		if ( ! $this->queue || defined('DOING_AJAX') )
 			return;
-		}
 
-		update_option( 'dp_parallel_cron_running', 'yes' );
-
-		// check queue on every init
-		if ( ! $this->queue ) {
-			$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Nothing in queue' );
-			$this->log( $message );
-			flock($fp, LOCK_UN);
-			return;
-		}
-
-		// don't run on our POST
-		if ( $this->is_current_action( $this->receive_action ) || $this->is_current_action( $this->send_action ) ) {
-			$this->log( 'Should skip on ' . $_POST['dp_action']  );
-			flock($fp, LOCK_UN);
-			return;
-		}
+		// init stuff
+		$count = 1;
+		$limit = 5;
 
 		$request = array();
-		$request['blocking'] = false;
-		$request['timeout'] = 1;
-		$request['body'] = array( 'dp_action' => $this->send_action );
+		$request['blocking'] = true;
+		$request['timeout'] = 10;
 
-		wp_remote_post( home_url( $this->send_page ), $request );
+		// remove actions that will be processed now, save modified array
+		$left_queue = array_slice( $this->queue, $limit, null, true );
+		update_option( 'dp_later', $left_queue );
 
-		$message = sprintf( '%s, Time - %s, Objects - %s', __METHOD__, timer_stop(), 'Run request' );
-		$this->log( $message );
+		while ( $this->queue && $count <= $limit ) {
+			$current_job = array_shift( $this->queue );
 
-		flock($fp, LOCK_UN);
-	}
+//			$obj = new $current_job[0]( $current_job[2] );
+//			$obj->{$current_job[1]}( $current_job[3] );
 
-	function send() {
 
-		if ( $this->is_current_action( $this->send_action ) && ! DP_PARALLEL_SEND ) {
+			$request['body'] = array(
+				'job' => $current_job,
+				'dp_action' => $this->receive_action
+			);
 
-			define( 'DP_PARALLEL_SEND', true );
+			$req = wp_remote_post( home_url( $this->listen ), $request );
 
-			// init stuff
-			$count = 1;
-			$limit = 20;
-
-			$request = array();
-			$request['blocking'] = true;
-			$request['timeout'] = 1;
-
-			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), count( $this->queue ) );
-			$this->log( $message );
-
-			// get all later actions
-			$this->queue = get_option( 'dp_later', array() );
-			// remove actions that will be processed now, save modified array
-			update_option( 'dp_later', array_slice( $this->queue, $limit, null, true ) );
-
-			while ( $this->queue && $count <= $limit ) {
-				$request['body'] = array(
-					'job' => array_shift( $this->queue ),
-					'dp_action' => $this->receive_action
-				);
-
-				wp_remote_post( home_url( $this->receive_page ), $request );
-
-				$count++;
+			if ( is_wp_error($req) ) {
+				// put back to queue
+				$left_queue[$current_job[3]['key']] = $current_job;
+				update_option( 'dp_later', $left_queue );
 			}
 
-			$message = sprintf( '%s, Time - %s, Objects - %s, Stop', __METHOD__, timer_stop(), count( $this->queue ) );
-			$this->log( $message );
 
-
-			// all good, stop the wp execution
+			$count++;
 		}
-	}
-
-	function receive() {
-
-		$call = isset( $_POST['job'] ) ? $_POST['job'] : array();
-
-		if ( $this->is_current_action( $this->receive_action ) && $call ) {
-
-			$message = sprintf( '%s, Time - %s, Objects - %s, Start', __METHOD__, timer_stop(), $call[0] );
-			$this->log( $message );
-
-			// instantiate a new object with params for __construct & call method
-			$obj = new $call[0]( $call[2] );
-			$obj->{$call[1]}( $call[3] );
-
-			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), $call[0] );
-			$this->log( $message );
-			// all good, stop the wp execution
-		}
-	}
-
-	protected function is_current_action( $action ) {
-		return isset( $_POST['dp_action'] ) ? ( $action == $_POST['dp_action'] ) : false;
 	}
 
 	/**

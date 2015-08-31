@@ -67,7 +67,9 @@ class DP_REBS extends DP_Plugin {
 	}
 
 	function save_images_from_import( $post_id, $image_id ) {
-		$previous_images = get_post_meta( $post_id, 'estate_property_gallery', false );
+		$previous_images = get_post_meta( $post_id, 'estate_property_gallery', true );
+		if ( empty( $previous_images ) )
+			$previous_images = array();
 
 		if ( ! in_array( $image_id, $previous_images ) ) {
 			if ( $image_id ) {
@@ -161,6 +163,8 @@ class DP_REBS extends DP_Plugin {
 
 				$this->set_api_data_single( $this->api_id );
 				$this->force_save_api_data();
+				_e('Saved');
+				die;
 			} else {
 				_e('No property id');
 				die;
