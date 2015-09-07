@@ -54,7 +54,7 @@ class DP_Parallel {
 
 		$request = array();
 		$request['blocking'] = false;
-		$request['timeout'] = 5;
+		$request['timeout'] = 10;
 
 		$request['body'] = array(
 			'dp_action' => $this->general_action
@@ -63,7 +63,7 @@ class DP_Parallel {
 		$req = wp_remote_post( home_url( $this->general_listen ), $request );
 
 		if ( is_wp_error($req) ) {
-			var_dump( $req );
+			$this->log( 'Failed general request: ' . $req->get_error_message() );
 		}
 
 	}
