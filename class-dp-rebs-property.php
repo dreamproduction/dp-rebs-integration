@@ -102,7 +102,7 @@ class DP_REBS_Property {
 					$this->meta['estate_property_size'] = (string) $value;
 					break;
 				case 'print_url' :
-					$this->meta['estate_print_url'] = (string) $value;
+					$this->meta['estate_property_print_url'] = (string) $value;
 					break;
 				case 'partitioning' :
 				case 'apartment_type' :
