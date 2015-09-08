@@ -62,8 +62,12 @@ class DP_REBS extends DP_Plugin {
 		// wp all import compatibility
 		add_action( 'pmxi_gallery_image', array( $this, 'save_images_from_import' ), 10, 2 );
 
+		add_action( 'pmxi_update_post_meta', array( $this, 'save_agent_from_import' ), 10, 3 );
+
+
+
 		// fire up the racket to Pluto!
-		new DP_Parallel();
+		//new DP_Parallel();
 	}
 
 	function save_images_from_import( $post_id, $image_id ) {
@@ -77,6 +81,13 @@ class DP_REBS extends DP_Plugin {
 				$new_images[] = $image_id;
 				update_post_meta( $post_id, 'estate_property_gallery', $new_images, $previous_images );
 			}
+		}
+	}
+
+	function save_agent_from_import( $post_id, $meta_key, $meta_value ) {
+		if ( $meta_key == 'estate_property_custom_agent' ) {
+			$user_id = get_user_by( 'email', $meta_value );
+			update_post_meta( $post_id, $meta_key, $user_id );
 		}
 	}
 
