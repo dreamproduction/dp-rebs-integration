@@ -71,11 +71,11 @@ class DP_REBS_Property {
 				case 'for_sale' :
 					$this->taxonomy['property-status'][] = 'De vanzare';
 					break;
+				case 'zone' :
 				case 'city':
-					$this->taxonomy['property-location'][] = $value;
-					break;
 				case 'region':
-					$this->taxonomy['property-location'][] = $value;
+					if ( $value )
+						$this->taxonomy['property-location'][] = $value;
 					break;
 				case 'property_type':
 					if ( $value != 6 ) {
@@ -117,8 +117,11 @@ class DP_REBS_Property {
 				case 'house_type' :
 					$this->meta['estate_property_' . $key] = $this->get_field_option( (string) $key, (string) $value );
 					break;
-				case 'date_modified_by_user':
+				case 'date_added':
 					$this->object['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
+					break;
+				case 'date_modified_by_user' :
+					$this->object['post_modified'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
 				case 'destination':
 					if( $this->data['property_type'] == 6 ) {
@@ -145,7 +148,6 @@ class DP_REBS_Property {
 				case 'cut' :
 				case 'availability' :
 				case 'date_modified' :
-				case 'date_added' :
 				case 'date_validated' :
 				case 'exclusive' :
 				case 'images' :
@@ -174,7 +176,6 @@ class DP_REBS_Property {
 				case 'lat' :
 				case 'lng' :
 				case 'street' :
-				case 'zone' :
 					// handled differently or not needed
 					break;
 				default:
@@ -196,10 +197,10 @@ class DP_REBS_Property {
 		if ( $this->data['lat'] && $this->data['lng'] ) {
 			$this->meta['estate_property_google_maps'] = array(
 				'lat' => $this->data['lat'],
-				'lng' => $this->data['lng']
+				'lng' => $this->data['lng'],
+				'address' => implode( ', ', array_filter( array( $this->data['city'], $this->data['street'] ) ) )
 			);
 		}
-		$this->meta['estate_property_address'] = implode( ', ', array_filter( array( $this->data['zone'], $this->data['city'] ) ) );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'map fields' );
 		$this->log( $message );
@@ -359,7 +360,7 @@ class DP_REBS_Property {
 			$this->object['ID'] = $this->old_id;
 
 			// bail if no update is necessary
-			if ( $this->object['post_date'] == $this->old_date )
+			if ( $this->object['post_modified'] == $this->old_date )
 				return false;
 		}
 
@@ -380,7 +381,7 @@ class DP_REBS_Property {
 
 		if ( $exists ) {
 			$this->old_id = $exists[0]->ID;
-			$this->old_date = $exists[0]->post_date;
+			$this->old_date = $exists[0]->post_modified;
 		}
 
 		return $this;
