@@ -340,6 +340,8 @@ class DP_REBS_Property {
 		$user_image = wp_get_attachment_image_src( $user_image_id, 'full' );
 		update_user_meta( $user_id, 'user_image', $user_image[0] );
 
+	    wp_update_post( array( 'ID' => $this->id, 'post_author' => $user_id ) );
+
         // associate agent with the property
         update_post_meta( $this->id, 'estate_property_custom_agent', $user_id );
 
@@ -466,6 +468,9 @@ class DP_REBS_Property {
 		// also clear images
 		delete_post_meta( $this->id, 'estate_property_gallery' );
 
+		// also clear featured image
+		delete_post_meta( $this->id, '_thumbnail_id' );
+
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
 		$this->log( $message );
 
@@ -502,7 +507,7 @@ class DP_REBS_Property {
 			$images->add( $image_url, $this->id, $index );
 		}
 
-		$images->store_data()->save_later();
+		$images->store_data()->save_now();
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->images ) );
 		$this->log( $message );
@@ -525,7 +530,7 @@ class DP_REBS_Property {
 			$images->add( $image_url, $this->id );
 		}
 
-		$images->store_data()->save_later();
+		$images->store_data()->save_now();
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->sketches ) );
 		$this->log( $message );

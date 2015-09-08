@@ -77,6 +77,14 @@ class DP_Save_Images {
 		return $this;
 	}
 
+	public function save_now() {
+		foreach ( $this->data as $element ) {
+			set_time_limit(60);
+			$this->save( $element );
+		}
+		return $this;
+	}
+
 	function save_later() {
 		$later_actions = get_option( $this->later_name, array() );
 		foreach ( $this->later_actions as $key => $action ) {
