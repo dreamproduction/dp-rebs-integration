@@ -149,7 +149,6 @@ class DP_REBS_Property {
 				case 'availability' :
 				case 'date_modified' :
 				case 'date_validated' :
-				case 'exclusive' :
 				case 'images' :
 				case 'internal_id' :
 				case 'pot' :
@@ -165,7 +164,6 @@ class DP_REBS_Property {
 				case 'vat' :
 				case 'vat_rent' :
 				case 'vat_sale' :
-				case 'verbose_floor' :
 				case 'verbose_price' :
 				case 'tags_en' :
 				case 'residential_complex' :
