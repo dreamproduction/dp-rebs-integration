@@ -8,9 +8,6 @@ class DP_REBS_Property {
 	public $object = array();
 	public $meta = array();
 	public $taxonomy = array();
-	public $images = array();
-    public $agent = array();
-	public $sketches = array();
 	public $id = 0;
 
 	public function __construct( $schema ) {
@@ -20,6 +17,7 @@ class DP_REBS_Property {
 	public function set_data( $data ) {
 		$this->data = $data;
 		$this->map_fields();
+		$this->set_id();
 		return $this;
 	}
 
@@ -42,15 +40,19 @@ class DP_REBS_Property {
 		return $this;
 	}
 
-	protected function map_fields() {
+	protected function set_id() {
+		if ( isset( $this->object['ID'] ) ) {
+			$this->id = $this->object['ID'];
+		}
+	}
 
-		$this->images = $this->data['full_images'];
-		$this->sketches =  $this->data['sketches'];
-		$this->agent = $this->data['agent'];
+	protected function map_fields() {
 
 		$taxonomies = new DP_REBS_Taxonomy_Mapping( $this->data, $this->fields );
 		$object = new DP_REBS_Post_Mapping( $this->data );
+
 		$exclude = $taxonomies->get_saved_fields() + $object->get_saved_fields() + array( 'full_images', 'sketches', 'agent' );
+
 		$meta = new DP_REBS_Meta_Mapping( $this->data, $this->fields, $exclude );
 
 		// multidimensional array with taxonomy names and actual term ids
@@ -84,7 +86,7 @@ class DP_REBS_Property {
         $user_exists = new WP_User_Query(
               array(
                   'meta_key' => 'rebs_id',
-                  'meta_value' => $this->agent['id']
+                  'meta_value' =>  $this->data['agent']['id']
               )
         );
 
@@ -96,43 +98,43 @@ class DP_REBS_Property {
             //check if agent changed his email address
             $actual_user = get_user_by('id', $user_id);
 
-            if ( $actual_user->user_email !=  $this->agent['email'] ) {
+            if ( $actual_user->user_email !=   $this->data['agent']['email'] ) {
                 wp_update_user(
                     array(
                         'ID' => $user_id,
-                        'user_email' => $this->agent['email']
+                        'user_email' =>  $this->data['agent']['email']
                     )
                 );
             }
         } else {
             // if agent doesn't exist --- the agent don't have rebs_id
             //check if email agent exists
-            $actual_user = get_user_by( 'email', $this->agent['email'] );
+            $actual_user = get_user_by( 'email',  $this->data['agent']['email'] );
 
             if ( $actual_user ) {
                 $user_id = $actual_user->ID;
 
-                update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+                update_user_meta( $user_id, 'rebs_id',  $this->data['agent']['id'] );
 
             } else {
                 //new agent
                 $user_id = wp_insert_user(
                     array(
-                        'user_login' => $this->agent['first_name'] . " " . $this->agent['last_name'],
-                        'user_email' => $this->agent['email'],
-                        'first_name' => $this->agent['first_name'],
-                        'last_name' => $this->agent['last_name'],
+                        'user_login' =>  $this->data['agent']['first_name'] . " " .  $this->data['agent']['last_name'],
+                        'user_email' =>  $this->data['agent']['email'],
+                        'first_name' =>  $this->data['agent']['first_name'],
+                        'last_name' =>  $this->data['agent']['last_name'],
                         'role' => 'agent'
                     )
                 );
 
-                update_user_meta( $user_id, 'rebs_id', $this->agent['id'] );
+                update_user_meta( $user_id, 'rebs_id',  $this->data['agent']['id'] );
             }
         }
 
-		//update_user_meta( $user_id, 'office_phone_number', $this->agent['phone'] );
-		update_user_meta( $user_id, 'company_name', $this->agent['position'] );
-		$user_image_id = DP_Save_Images::import_external_image( $this->agent['avatar'], 0 );
+		//update_user_meta( $user_id, 'office_phone_number',  $this->data['agent']['phone'] );
+		update_user_meta( $user_id, 'company_name',  $this->data['agent']['position'] );
+		$user_image_id = DP_Save_Images::import_external_image(  $this->data['agent']['avatar'], 0 );
 		$user_image = wp_get_attachment_image_src( $user_image_id, 'full' );
 		update_user_meta( $user_id, 'user_image', $user_image[0] );
 
@@ -169,14 +171,14 @@ class DP_REBS_Property {
 	}
 
 	public function save_images() {
-		if ( $this->id == 0 || ! $this->images ) return $this;
+		if ( $this->id == 0 || ! $this->data['full_images'] ) return $this;
 
 		$this->clean_images();
 
 		$images = new DP_Save_Images();
 		$count = 1;
 
-		foreach ( $this->images as $index => $image_url ) {
+		foreach ( $this->data['full_images'] as $index => $image_url ) {
 			if ( $count > 25 )
 				continue;
 			$images->add( $image_url, $this->id, $index );
@@ -194,13 +196,13 @@ class DP_REBS_Property {
 	}
 
 	public function save_sketches() {
-		if ( $this->id == 0 || ! $this->sketches ) return $this;
+		if ( $this->id == 0 || ! $this->data['sketches'] ) return $this;
 
 		$this->clean_sketches();
 
 		$images = new DP_Save_Images();
 
-		foreach ( $this->sketches as $index => $image_url ) {
+		foreach ( $this->data['sketches'] as $index => $image_url ) {
 			$images->add( $image_url, $this->id, $index );
 		}
 		$ids = $images->save_all()->get_ids();
