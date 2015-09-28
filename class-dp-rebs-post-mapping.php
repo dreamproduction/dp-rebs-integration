@@ -1,40 +1,30 @@
 <?php
 
-class DP_REBS_Post_Mapping {
-	protected $raw_data = array();
-	protected $data = array();
-	protected $saved_fields = array();
+class DP_REBS_Post_Mapping extends DP_REBS_Mapping {
 
-	public function __construct( $data ) {
-		$this->raw_data = $data;
-
-		$this->set_title()->set_content()->set_time()->set_status()->set_old_id();
+	public function __construct( $data = array(), $mapping_data = array() ) {
+		parent::__construct( $data, $mapping_data );
+		$this->saved_fields = array( 'title' ) + array( 'description' ) + array( 'date_added', 'date_modified_by_user' );
 	}
 
-	public function get_data() {
-		return $this->data;
-	}
-
-	public function get_saved_fields() {
-		return $this->saved_fields;
+	public function map() {
+		$this->set_title();
+		$this->set_content();
+		$this->set_time();
+		$this->set_status();
+		$this->set_old_id();
 	}
 
 	protected function set_title() {
 		$this->data['post_title'] = $this->raw_data['title'];
-		$this->saved_fields = $this->saved_fields + array( 'title' );
-		return $this;
 	}
 	protected function set_content() {
 		$this->data['post_content'] = $this->raw_data['description'];
-		$this->saved_fields = $this->saved_fields + array( 'description' );
-		return $this;
 	}
 
 	protected function set_time() {
 		$this->data['post_date'] = date('Y-m-d H:i:s', strtotime($this->raw_data['date_added']) );
 		$this->data['post_modified'] = date('Y-m-d H:i:s', strtotime($this->raw_data['date_modified_by_user']) );
-		$this->saved_fields = $this->saved_fields + array( 'date_added', 'date_modified_by_user' );
-		return $this;
 	}
 
 	protected function set_status() {

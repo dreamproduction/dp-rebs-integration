@@ -5,20 +5,16 @@ class DP_REBS_Property {
 	protected $schema = array();
 	protected $data;
 
-	public $object = array();
-	public $meta = array();
-	public $taxonomy = array();
+	protected $object = array();
+	protected $meta = array();
+	protected $taxonomies = array();
 	public $id = 0;
 
 	public function __construct( $schema ) {
 		$this->set_schema( $schema )->set_fields_options();
-	}
-
-	public function set_data( $data ) {
-		$this->data = $data;
-		$this->map_fields();
-		$this->set_id();
-		return $this;
+		$this->taxonomies = new DP_REBS_Taxonomy_Mapping();
+		$this->object = new DP_REBS_Post_Mapping();
+		$this->meta = new DP_REBS_Meta_Mapping();
 	}
 
 	protected function set_schema( $schema ) {
@@ -40,27 +36,35 @@ class DP_REBS_Property {
 		return $this;
 	}
 
+	public function set_data( $data ) {
+		$this->data = $data;
+		$this->taxonomies->set_data( $this->data, $this->fields );
+		$this->object->set_data( $this->data );
+		$this->meta->set_data( $this->data, $this->fields, $this->get_saved() );
+
+		$this->map_fields();
+		$this->set_id();
+
+		return $this;
+	}
+
 	protected function set_id() {
 		if ( isset( $this->object['ID'] ) ) {
 			$this->id = $this->object['ID'];
 		}
 	}
 
+	protected function get_saved() {
+		return $this->taxonomies->get_saved_fields() + $this->object->get_saved_fields() + array( 'full_images', 'sketches', 'agent' );
+	}
+
 	protected function map_fields() {
-
-		$taxonomies = new DP_REBS_Taxonomy_Mapping( $this->data, $this->fields );
-		$object = new DP_REBS_Post_Mapping( $this->data );
-
-		$exclude = $taxonomies->get_saved_fields() + $object->get_saved_fields() + array( 'full_images', 'sketches', 'agent' );
-
-		$meta = new DP_REBS_Meta_Mapping( $this->data, $this->fields, $exclude );
-
 		// multidimensional array with taxonomy names and actual term ids
-		$this->taxonomy = $taxonomies->get_data();
+		$this->taxonomies->map();
 		// array with data ready to save
-		$this->object = $object->get_data();
+		$this->object->map();
 		// array with data ready to save
-		$this->meta = $meta->get_data();
+		$this->meta->map();
 
 		return $this;
 	}
@@ -71,7 +75,7 @@ class DP_REBS_Property {
 
 	public function save_object() {
 		// actual insert. returns 0 on failure
-		$this->id = wp_insert_post( $this->object, false );
+		$this->id = wp_insert_post( $this->object->get_data(), false );
 
 		// save ID as early as possible to avoid duplicates
 		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
@@ -151,7 +155,7 @@ class DP_REBS_Property {
 
 		$this->clean_taxonomy();
 
-		foreach ( $this->taxonomy as $taxonomy => $terms ) {
+		foreach ( $this->taxonomies->get_data() as $taxonomy => $terms ) {
 			wp_set_object_terms( $this->id, $terms, $taxonomy );
 		}
 
@@ -163,8 +167,8 @@ class DP_REBS_Property {
 
 		$this->clean_meta();
 
-		foreach ( $this->meta as $key => $meta_value ) {
-			update_post_meta( $this->id, $key, $meta_value );
+		foreach ( $this->meta->get_data() as $key => $meta_value ) {
+			update_post_meta( $this->id, sprintf( 'estate_property_%s', $key ), $meta_value );
 		}
 
 		return $this;
@@ -213,13 +217,13 @@ class DP_REBS_Property {
 	}
 
 	protected function clean_taxonomy() {
-		$taxonomies = array_keys( $this->taxonomy );
+		$taxonomies = array_keys( $this->taxonomies->get_data() );
 		wp_delete_object_term_relationships( $this->id, $taxonomies );
 	}
 
 	protected function clean_meta() {
-		foreach ( $this->meta as $key => $meta_value ) {
-			delete_post_meta( $this->id, $key );
+		foreach ( $this->meta->get_data() as $key => $meta_value ) {
+			delete_post_meta( $this->id, sprintf( 'estate_property_%s', $key ) );
 		}
 	}
 

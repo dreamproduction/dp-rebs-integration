@@ -1,26 +1,17 @@
 <?php
 
-class DP_REBS_Taxonomy_Mapping {
-	protected $raw_data = array();
-	protected $data = array();
-	protected $mapping = array();
-	protected $saved_fields = array();
+class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 
-
-	function __construct( $data, $mapping_data ) {
-		$this->raw_data = $data;
-		$this->mapping = $mapping_data;
-
-		$this->set_features()->set_location()->set_status()->set_type();
-
+	public function __construct( $data = array(), $mapping_data = array() ) {
+		parent::__construct( $data, $mapping_data );
+		$this->saved_fields = array( 'tags' ) + array( 'region', 'zone', 'city' ) + array( 'property_type' ) + array( 'for_rent', 'for_sale' );
 	}
 
-	public function get_data() {
-		return $this->data;
-	}
-
-	public function get_saved_fields() {
-		return $this->saved_fields;
+	public function map() {
+		$this->set_features();
+		$this->set_location();
+		$this->set_status();
+		$this->set_type();
 	}
 
 	protected function set_features() {
@@ -35,10 +26,6 @@ class DP_REBS_Taxonomy_Mapping {
 			}
 
 		}
-
-		$this->saved_fields = $this->saved_fields + array('tags');
-
-		return $this;
 	}
 
 	protected function set_location() {
@@ -68,9 +55,6 @@ class DP_REBS_Taxonomy_Mapping {
 
 		$this->data['property-location'] = array( $zone_id, $city_id, $region_id );
 
-		$this->saved_fields = $this->saved_fields + array('region', 'zone', 'city');
-
-		return $this;
 	}
 
 	protected function set_status() {
@@ -81,9 +65,6 @@ class DP_REBS_Taxonomy_Mapping {
 		if ( $this->raw_data['for_sale'] === true )
 			$this->data['property-status'][] = self::name_to_id( 'De vânzare', 'property-status' );
 
-		$this->saved_fields = $this->saved_fields + array('for_rent', 'for_sale' );
-
-		return $this;
 	}
 
 	protected function set_type() {
@@ -105,9 +86,6 @@ class DP_REBS_Taxonomy_Mapping {
 		foreach ( $term_names as $term_name ) {
 			$this->data['property-type'][] = self::name_to_id( $term_name, 'property-type' );
 		}
-
-		$this->saved_fields = $this->saved_fields + array( 'property_type' );
-		return $this;
 	}
 
 	private static function name_to_id( $name, $taxonomy, $args = array() ) {
