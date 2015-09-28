@@ -1,9 +1,10 @@
 <?php
 
-class DP_REBS_Taxonomy {
+class DP_REBS_Taxonomy_Mapping {
 	protected $raw_data = array();
 	protected $data = array();
 	protected $mapping = array();
+	protected $saved_fields = array();
 
 
 	function __construct( $data, $mapping_data ) {
@@ -12,7 +13,14 @@ class DP_REBS_Taxonomy {
 
 		$this->set_features()->set_location()->set_status()->set_type();
 
+	}
+
+	public function get_data() {
 		return $this->data;
+	}
+
+	public function get_saved_fields() {
+		return $this->saved_fields;
 	}
 
 	protected function set_features() {
@@ -27,6 +35,8 @@ class DP_REBS_Taxonomy {
 			}
 
 		}
+
+		$this->saved_fields = $this->saved_fields + array('tags');
 
 		return $this;
 	}
@@ -58,6 +68,8 @@ class DP_REBS_Taxonomy {
 
 		$this->data['property-location'] = array( $zone_id, $city_id, $region_id );
 
+		$this->saved_fields = $this->saved_fields + array('region', 'zone', 'city');
+
 		return $this;
 	}
 
@@ -68,6 +80,8 @@ class DP_REBS_Taxonomy {
 
 		if ( $this->raw_data['for_sale'] === true )
 			$this->data['property-status'][] = self::name_to_id( 'De vânzare', 'property-status' );
+
+		$this->saved_fields = $this->saved_fields + array('for_rent', 'for_sale' );
 
 		return $this;
 	}
@@ -92,6 +106,7 @@ class DP_REBS_Taxonomy {
 			$this->data['property-type'][] = self::name_to_id( $term_name, 'property-type' );
 		}
 
+		$this->saved_fields = $this->saved_fields + array( 'property_type' );
 		return $this;
 	}
 

@@ -12,8 +12,6 @@ class DP_REBS_Property {
     public $agent = array();
 	public $sketches = array();
 	public $id = 0;
-	protected $old_id = 0;
-	protected $old_date = '000-00-00 00:00:00';
 
 	public function __construct( $schema ) {
 		$this->set_schema( $schema )->set_fields_options();
@@ -21,6 +19,7 @@ class DP_REBS_Property {
 
 	public function set_data( $data ) {
 		$this->data = $data;
+		$this->map_fields();
 		return $this;
 	}
 
@@ -43,186 +42,45 @@ class DP_REBS_Property {
 		return $this;
 	}
 
-	protected function get_field_option( $name, $value ) {
-		return isset( $this->fields[$name][$value] ) ? $this->fields[$name][$value] : '';
-	}
+	protected function map_fields() {
 
-	public function get_fields_options() {
-		return $this->fields;
-	}
+		$taxonomies = new DP_REBS_Taxonomy_Mapping( $this->data, $this->fields );
+		$object = new DP_REBS_Post_Mapping( $this->data );
 
-	public function clear_data() {
-		$this->data = array();
-		return $this;
-	}
+		$this->taxonomy = $taxonomies->get_data();
+		$this->object = $object->get_data();
+		$this->images = $this->data['full_images'];
+		$this->sketches =  $this->data['sketches'];
+        $this->agent = $this->data['agent'];
 
-	public function map_fields() {
+		$saved_fields = array();
+		$saved_fields = $saved_fields + $taxonomies->get_saved_fields();
+		$saved_fields = $saved_fields + $object->get_saved_fields();
+		$saved_fields = $saved_fields + array( 'full_images', 'sketches', 'agent' );
 
-		$this->taxonomy = new DP_REBS_Taxonomy( $this->data, $this->fields );
+		$meta = new DP_REBS_Meta_Mapping( $this->data, $this->fields, $saved_fields );
 
-		foreach ( $this->data as $key => $value ) {
-			if ( ! $value )
-				continue;
-
-			switch ( $key ) {
-				case 'title':
-					$this->object['post_title'] = $value;
-					break;
-				case 'description':
-					$this->object['post_content'] = $value;
-					break;
-				case 'id':
-					$this->meta['estate_property_id'] = 'CP' . (string) $value;
-					break;
-				case 'price_sale' :
-					$this->meta['estate_property_price'] = (string) $value;
-					break;
-				case 'surface_built' :
-					$this->meta['estate_property_size'] = (string) $value;
-					break;
-				case 'partitioning' :
-				case 'apartment_type' :
-				case 'building_structure' :
-				case 'comfort' :
-				case 'construction_status' :
-				case 'floor' :
-				case 'commercial_building_type' :
-				case 'office_class':
-				case 'pedestrian_traffic' :
-				case 'land_classification' :
-				case 'house_type' :
-					$this->meta['estate_property_' . $key] = $this->get_field_option( (string) $key, (string) $value );
-					break;
-				case 'date_added':
-					$this->object['post_date'] = date('Y-m-d H:i:s', strtotime($value) );
-					break;
-				case 'date_modified_by_user' :
-					$this->object['post_modified'] = date('Y-m-d H:i:s', strtotime($value) );
-					break;
-				case 'destination':
-					foreach( $value as $v ) {
-						$this->meta['estate_property_' . $key] = $v;
-					}
-					break;
-				case 'full_images' :
-					$this->images = $value;
-					break;
-				case 'sketches' :
-					$this->sketches = $value;
-					break;
-                case 'agent' :
-                    $this->agent = $value;
-                    break;
-				case 'closed_transaction_type' :
-				case 'cut' :
-				case 'availability' :
-				case 'date_modified' :
-				case 'date_validated' :
-				case 'images' :
-				case 'internal_id' :
-				case 'pot' :
-				case 'promote_carousel' :
-				case 'promote_commission_rent' :
-				case 'promote_commission_sale' :
-				case 'promote_custom_fields' :
-				case 'promote_external' :
-				case 'promote_featured' :
-				case 'promote_flags' :
-				case 'resource_uri' :
-				case 'similar_properties' :
-				case 'vat' :
-				case 'vat_rent' :
-				case 'vat_sale' :
-				case 'verbose_price' :
-				case 'tags_en' :
-				case 'residential_complex' :
-				case 'is_available' :
-				case 'description_en' :
-				case 'title_en' :
-				case 'thumbnail' :
-				case 'lat' :
-				case 'lng' :
-				case 'street' :
-				case 'for_rent' :
-				case 'for_sale' :
-				case 'zone' :
-				case 'city':
-				case 'region':
-				case 'property_type':
-				case 'tags':
-					// handled differently or not needed
-					break;
-				default:
-					if ( is_string( $value ) || is_scalar( $value ) || is_bool( $value ) ) {
-						$this->meta[ 'estate_property_' . $key ] = (string) $value;
-					} else {
-						// ignore extra arrays added to API
-						$this->log( 'Unhandled array ' . $key );
-					}
-			}
-		}
-
-
-		$this->object['post_type'] = 'property';
-		$this->object['post_status'] = 'publish';
-		$this->meta['estate_property_size_unit'] = 'mp';
-
-
-		if ( $this->data['lat'] && $this->data['lng'] ) {
-			$this->meta['estate_property_google_maps'] = array(
-				'lat' => $this->data['lat'],
-				'lng' => $this->data['lng'],
-				'address' => implode( ', ', array_filter( array( $this->data['city'], $this->data['street'] ) ) )
-			);
-		}
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'map fields' );
-		$this->log( $message );
+		$this->meta = $meta->get_data();
 
 		return $this;
 	}
 
 	public function delete_object() {
-		$this->check_existing();
-
-		if ( $this->old_id ) {
-			wp_delete_post( $this->old_id, true );
-
-			$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'delete_post' );
-			$this->log( $message );
-		} else {
-			$message = sprintf( '%s, Time - %s, Objects - %s, Failed, no post id', __METHOD__, timer_stop(), 'delete_post' );
-			$this->log( $message );
-		}
-
+		wp_delete_post( $this->id, true );
 	}
 
 	public function save_object() {
-		$this->check_existing();
-
-		if ( $this->old_id ) {
-			// wp_insert_post will update if ID present
-			$this->object['ID'] = $this->old_id;
-		}
-
 		// actual insert. returns 0 on failure
 		$this->id = wp_insert_post( $this->object, false );
 
 		// save ID as early as possible to avoid duplicates
 		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
 
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
-		$this->log( $message );
-
 		return $this;
 	}
 
-
     public function save_agent() {
-        // no property id? bail
-        if ( $this->id == 0 ) {
-            return $this;
-        }
+	    if ( $this->id == 0 ) return $this;
 
         // find if agent exists
         $user_exists = new WP_User_Query(
@@ -285,69 +143,17 @@ class DP_REBS_Property {
         // associate agent with the property
         update_post_meta( $this->id, 'estate_property_custom_agent', $user_id );
 
-        $message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->agent ) );
-        $this->log( $message );
-
         return $this;
     }
-
-	protected function check_existing() {
-		$exists = get_posts(
-			array(
-				'post_type' => 'property',
-				'suppress_filters' => false,
-				'meta_key' => 'estate_property_id',
-				'meta_value' => $this->meta['estate_property_id'],
-				'posts_per_page' => 1,
-				'post_status' => 'any'
-			)
-		);
-
-		if ( $exists ) {
-			$this->old_id = $exists[0]->ID;
-			$this->old_date = $exists[0]->post_modified;
-		}
-
-		return $this;
-	}
-
-	public function clean_taxonomy() {
-		if ( $this->id == 0 ) return $this;
-
-		$taxonomies = array_keys( $this->taxonomy );
-		wp_delete_object_term_relationships( $this->id, $taxonomies );
-
-		return $this;
-	}
 
 	public function save_taxonomy() {
 		if ( $this->id == 0 ) return $this;
 
+		$this->clean_taxonomy();
+
 		foreach ( $this->taxonomy as $taxonomy => $terms ) {
 			wp_set_object_terms( $this->id, $terms, $taxonomy );
 		}
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->taxonomy ) );
-		$this->log( $message );
-
-		return $this;
-	}
-
-	public function clean_meta() {
-		if ( $this->id == 0 ) return $this;
-
-		foreach ( $this->meta as $key => $meta_value ) {
-			delete_post_meta( $this->id, $key );
-		}
-
-		// also clear images
-		delete_post_meta( $this->id, 'estate_property_gallery' );
-
-		// also clear featured image
-		delete_post_meta( $this->id, '_thumbnail_id' );
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
-		$this->log( $message );
 
 		return $this;
 	}
@@ -355,18 +161,19 @@ class DP_REBS_Property {
 	public function save_meta() {
 		if ( $this->id == 0 ) return $this;
 
+		$this->clean_meta();
+
 		foreach ( $this->meta as $key => $meta_value ) {
 			update_post_meta( $this->id, $key, $meta_value );
 		}
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->meta ) );
-		$this->log( $message );
 
 		return $this;
 	}
 
 	public function save_images() {
 		if ( $this->id == 0 || ! $this->images ) return $this;
+
+		$this->clean_images();
 
 		$images = new DP_Save_Images();
 		$count = 1;
@@ -385,32 +192,46 @@ class DP_REBS_Property {
 
 		set_post_thumbnail( $this->id, reset( $ids ) );
 
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->images ) );
-		$this->log( $message );
-
 		return $this;
 	}
 
 	public function save_sketches() {
 		if ( $this->id == 0 || ! $this->sketches ) return $this;
 
+		$this->clean_sketches();
+
 		$images = new DP_Save_Images();
 
 		foreach ( $this->sketches as $index => $image_url ) {
 			$images->add( $image_url, $this->id, $index );
 		}
-		$images->save_all();
-
-		$ids = $images->get_ids();
+		$ids = $images->save_all()->get_ids();
 
 		update_post_meta( $this->id, 'estate_property_sketches', $ids );
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->sketches ) );
-		$this->log( $message );
 
 		return $this;
 	}
 
+	protected function clean_taxonomy() {
+		$taxonomies = array_keys( $this->taxonomy );
+		wp_delete_object_term_relationships( $this->id, $taxonomies );
+	}
+
+	protected function clean_meta() {
+		foreach ( $this->meta as $key => $meta_value ) {
+			delete_post_meta( $this->id, $key );
+		}
+	}
+
+	protected function clean_images() {
+		delete_post_meta( $this->id, 'estate_property_gallery' );
+		// also clear featured image
+		delete_post_meta( $this->id, '_thumbnail_id' );
+	}
+
+	protected function clean_sketches() {
+		delete_post_meta( $this->id, 'estate_property_sketches' );
+	}
 
 	/**
 	 * @param string $message

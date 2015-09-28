@@ -189,9 +189,9 @@ class DP_REBS extends DP_Plugin {
 			if ( $data === false ) {
 				// set id for mapping
 				$data['id'] = $this->api_id;
-				$property->set_data($data)->map_fields()->delete_object();
+				$property->set_data($data)->delete_object();
 			} else {
-				$property->set_data($data)->map_fields()->save_object()->save_agent()->clean_meta()->save_meta()->clean_taxonomy()->save_taxonomy()->save_images()->save_sketches();
+				$property->set_data($data)->save_object()->save_agent()->save_meta()->save_taxonomy()->save_images()->save_sketches();
 
 			}
 		}
