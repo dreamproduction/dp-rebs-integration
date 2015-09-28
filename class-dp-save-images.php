@@ -31,7 +31,7 @@ class DP_Save_Images {
 	public function save( $element ) {
 
 		if ( ! $element || ! isset( $this->data[ $element['key'] ] ) ) {
-			$this->log('bail early: ' . $element['key']);
+			self::log('bail early: ' . $element['key']);
 			return $this;
 		}
 
@@ -44,7 +44,7 @@ class DP_Save_Images {
         }
 
 		if ( ! $image_id ) {
-			$this->log( 'no image id, image not imported' );
+			self::log( 'no image id, image not imported' );
 			return $this;
 		}
 
@@ -70,9 +70,9 @@ class DP_Save_Images {
 		else
 			$new_images[] = $image_id;
 
-		update_post_meta( $element['parent_id'], $this->name, $new_images );
+		update_post_meta( $element['parent_id'], $this->name, $new_images, $previous_images );
 
-		$this->log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
+		self::log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
 
 		return $this;
 	}
@@ -138,8 +138,11 @@ class DP_Save_Images {
 			preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $url, $matches);
 			$file_array['name'] = basename($matches[0]);
 
-			if ( $id = self::is_stored_image( $file_array['name'] ) )
+			if ( $id = self::is_stored_image( $file_array['name'] ) ) {
+				self::log('Image already storred: ' . $id . ' for parent: ' . $post_id);
 				return $id;
+			}
+
 
 			// Download file to temp location
 			$file_array['tmp_name'] = download_url( $url );
@@ -168,7 +171,7 @@ class DP_Save_Images {
 	/**
 	 * @param string $message
 	 */
-	function log( $message ) {
+	static function log( $message ) {
 		$upload_dir = wp_upload_dir();
 		$date = date_i18n( 'Y-m-d H:i:s' ) . " | ";
 		error_log( $date . $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ .  '.log' );
