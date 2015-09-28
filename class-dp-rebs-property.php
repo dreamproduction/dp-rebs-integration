@@ -56,36 +56,15 @@ class DP_REBS_Property {
 		return $this;
 	}
 
-	/**
-	 *
-	 */
 	public function map_fields() {
+
+		$this->taxonomy = new DP_REBS_Taxonomy( $this->data, $this->fields );
+
 		foreach ( $this->data as $key => $value ) {
 			if ( ! $value )
 				continue;
 
 			switch ( $key ) {
-				case 'for_rent' :
-					$this->taxonomy['property-status'][] = 'De inchiriat';
-					break;
-				case 'for_sale' :
-					$this->taxonomy['property-status'][] = 'De vanzare';
-					break;
-				case 'zone' :
-				case 'city':
-				case 'region':
-					if ( $value )
-						$this->taxonomy['property-location'][] = $value;
-					break;
-				case 'property_type':
-					if ( $value != 6 ) {
-						/* 6 == Teren */
-						$this->taxonomy['property-type'] = $this->get_field_option( (string) $key, (string) $value );
-					}
-					break;
-				case 'tags':
-					$this->taxonomy['property-features'] = $value;
-					break;
 				case 'title':
 					$this->object['post_title'] = $value;
 					break;
@@ -100,9 +79,6 @@ class DP_REBS_Property {
 					break;
 				case 'surface_built' :
 					$this->meta['estate_property_size'] = (string) $value;
-					break;
-				case 'print_url' :
-					$this->meta['estate_property_print_url'] = (string) $value;
 					break;
 				case 'partitioning' :
 				case 'apartment_type' :
@@ -124,15 +100,8 @@ class DP_REBS_Property {
 					$this->object['post_modified'] = date('Y-m-d H:i:s', strtotime($value) );
 					break;
 				case 'destination':
-					if( $this->data['property_type'] == 6 ) {
-						/* 6 == Teren */
-						foreach( $value as $v ) {
-							$this->taxonomy['property-type'][] = 'Teren ' . $v;
-						}
-					} else {
-						foreach( $value as $v ) {
-							$this->meta['estate_property_' . $key] = $v;
-						}
+					foreach( $value as $v ) {
+						$this->meta['estate_property_' . $key] = $v;
 					}
 					break;
 				case 'full_images' :
@@ -174,6 +143,13 @@ class DP_REBS_Property {
 				case 'lat' :
 				case 'lng' :
 				case 'street' :
+				case 'for_rent' :
+				case 'for_sale' :
+				case 'zone' :
+				case 'city':
+				case 'region':
+				case 'property_type':
+				case 'tags':
 					// handled differently or not needed
 					break;
 				default:
@@ -222,17 +198,6 @@ class DP_REBS_Property {
 	}
 
 	public function save_object() {
-		if ( $this->needs_update() ) {
-			$this->_insert();
-		}
-
-		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
-		$this->log( $message );
-
-		return $this;
-	}
-
-	public function force_save_object() {
 		$this->check_existing();
 
 		if ( $this->old_id ) {
@@ -240,7 +205,11 @@ class DP_REBS_Property {
 			$this->object['ID'] = $this->old_id;
 		}
 
-		$this->_insert();
+		// actual insert. returns 0 on failure
+		$this->id = wp_insert_post( $this->object, false );
+
+		// save ID as early as possible to avoid duplicates
+		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), 'insert_post' );
 		$this->log( $message );
@@ -248,34 +217,6 @@ class DP_REBS_Property {
 		return $this;
 	}
 
-	protected function _insert() {
-		// actual insert. returns 0 on failure
-		$this->id = wp_insert_post( $this->object, false );
-
-		// translate in all other languages if WPML active
-		if ( function_exists( 'icl_makes_duplicates' ) ) {
-			// icl_makes_duplicates( $this->id );
-		}
-
-		// save ID as early as possible to avoid duplicates
-		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
-
-		return $this;
-	}
-
-	public function maybe_translate() {
-		// no property id? bail
-		if ( $this->id == 0 ) {
-			return $this;
-		}
-
-		// translate in all other languages if WPML active
-		if ( function_exists( 'icl_makes_duplicates' ) ) {
-			// icl_makes_duplicates( $this->id );
-		}
-
-		return $this;
-	}
 
     public function save_agent() {
         // no property id? bail
@@ -350,21 +291,6 @@ class DP_REBS_Property {
         return $this;
     }
 
-	protected function needs_update() {
-		$this->check_existing();
-
-		if ( $this->old_id ) {
-			// wp_insert_post will update if ID present
-			$this->object['ID'] = $this->old_id;
-
-			// bail if no update is necessary
-			if ( $this->object['post_modified'] == $this->old_date )
-				return false;
-		}
-
-		return true;
-	}
-
 	protected function check_existing() {
 		$exists = get_posts(
 			array(
@@ -386,9 +312,7 @@ class DP_REBS_Property {
 	}
 
 	public function clean_taxonomy() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
+		if ( $this->id == 0 ) return $this;
 
 		$taxonomies = array_keys( $this->taxonomy );
 		wp_delete_object_term_relationships( $this->id, $taxonomies );
@@ -397,56 +321,10 @@ class DP_REBS_Property {
 	}
 
 	public function save_taxonomy() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
+		if ( $this->id == 0 ) return $this;
 
 		foreach ( $this->taxonomy as $taxonomy => $terms ) {
-			if ( $taxonomy == 'property-features' ) {
-				// $terms should be an array of arrays
-				if ( is_array( $terms )) {
-					$to_insert = array();
-					foreach ( $terms as $parent => $term_array ) {
-						if ( !$parent_result = term_exists($parent, $taxonomy) ) {
-							$this->log( 'tax: insert parent slug:' . $parent );
-							$parent_result = wp_insert_term( $parent, $taxonomy);
-						}
-
-
-						$to_insert[] = $parent_id = absint($parent_result['term_id']);
-
-						$this->log( 'tax: parent ok. slug:' . $parent . ' id:' . $parent_id );
-
-
-						foreach ( $term_array as $term ) {
-
-							$this->log( 'tax: check child term slug:' . $term );
-
-							// try slug-parent-slug first, as many terms are used under multiple parents
-							if ( $alt_result = term_exists( $term, $taxonomy, $parent_id ) ) {
-								// slug-parent-slug
-								$term_to_insert = absint($alt_result['term_id']);
-
-								$this->log( 'tax: child term exists:' . $term . ' id: ' . $term_to_insert );
-							} else {
-								// verify if exists, add it if not
-								$result = wp_insert_term( $term, $taxonomy, array( 'parent' => $parent_id ));
-								$term_to_insert = absint($result['term_id']);
-
-								$this->log( 'tax: child term inserted:' . $term . ' id: ' . $term_to_insert );
-							}
-
-							$to_insert[] = $term_to_insert;
-						}
-
-					}
-					// set everything at once, this way one tag won't replace the previous one set
-					wp_set_object_terms( $this->id, $to_insert, $taxonomy );
-				}
-
-			} else {
-				wp_set_object_terms( $this->id, $terms, $taxonomy );
-			}
+			wp_set_object_terms( $this->id, $terms, $taxonomy );
 		}
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->taxonomy ) );
@@ -456,9 +334,7 @@ class DP_REBS_Property {
 	}
 
 	public function clean_meta() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
+		if ( $this->id == 0 ) return $this;
 
 		foreach ( $this->meta as $key => $meta_value ) {
 			delete_post_meta( $this->id, $key );
@@ -477,9 +353,7 @@ class DP_REBS_Property {
 	}
 
 	public function save_meta() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
+		if ( $this->id == 0 ) return $this;
 
 		foreach ( $this->meta as $key => $meta_value ) {
 			update_post_meta( $this->id, $key, $meta_value );
@@ -492,13 +366,7 @@ class DP_REBS_Property {
 	}
 
 	public function save_images() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
-
-		if ( ! $this->images ) {
-			return $this;
-		}
+		if ( $this->id == 0 || ! $this->images ) return $this;
 
 		$images = new DP_Save_Images();
 		$count = 1;
@@ -524,13 +392,7 @@ class DP_REBS_Property {
 	}
 
 	public function save_sketches() {
-		if ( $this->id == 0 ) {
-			return $this;
-		}
-
-		if ( ! $this->sketches ) {
-			return $this;
-		}
+		if ( $this->id == 0 || ! $this->sketches ) return $this;
 
 		$images = new DP_Save_Images();
 
@@ -554,7 +416,6 @@ class DP_REBS_Property {
 	 * @param string $message
 	 */
 	function log( $message ) {
-
 		if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
 			$upload_dir = wp_upload_dir();
 			$date       = date_i18n( 'Y-m-d H:i:s' ) . " | ";

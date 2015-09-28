@@ -170,12 +170,11 @@ class DP_REBS extends DP_Plugin {
 				$this->log( 'Update hook hit with id:' .  $this->api_id );
 
 				$this->set_api_data_single( $this->api_id );
-				$this->force_save_api_data();
-				_e('Saved');
+				$this->save_api_data();
+				wp_die( __('Saved') );
 				die;
 			} else {
-				_e('No property id');
-				die;
+				wp_die( __('No property id') );
 			}
 		}
 	}
@@ -184,7 +183,7 @@ class DP_REBS extends DP_Plugin {
 		$this->api_data = $this->api->set_url( 'single', $api_id )->call()->store()->return_data();
 	}
 
-	function force_save_api_data() {
+	function save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
 			if ( $data === false ) {
@@ -192,7 +191,7 @@ class DP_REBS extends DP_Plugin {
 				$data['id'] = $this->api_id;
 				$property->set_data($data)->map_fields()->delete_object();
 			} else {
-				$property->set_data($data)->map_fields()->force_save_object()->save_agent()->clean_meta()->save_meta()->clean_taxonomy()->save_taxonomy()->save_images()->save_sketches()->maybe_translate();
+				$property->set_data($data)->map_fields()->save_object()->save_agent()->clean_meta()->save_meta()->clean_taxonomy()->save_taxonomy()->save_images()->save_sketches();
 
 			}
 		}
