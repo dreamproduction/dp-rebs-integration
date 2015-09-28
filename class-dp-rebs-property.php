@@ -550,17 +550,12 @@ class DP_REBS_Property {
 	}
 
 
-
-	public function __toString() {
-		return var_export( $this );
-	}
-
 	/**
 	 * @param string $message
 	 */
 	function log( $message ) {
 
-		if ( defined('WP_DEBUG') && WP_DEBUG == true ) {
+		if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
 			$upload_dir = wp_upload_dir();
 			$date       = date_i18n( 'Y-m-d H:i:s' ) . " | ";
 			error_log( $date . $message . "\r\n", 3, trailingslashit( $upload_dir['basedir'] ) . __CLASS__ . '.log' );

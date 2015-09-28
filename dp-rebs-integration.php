@@ -64,10 +64,6 @@ class DP_REBS extends DP_Plugin {
 
 		add_action( 'pmxi_update_post_meta', array( $this, 'save_agent_from_import' ), 10, 3 );
 
-
-
-		// fire up the racket to Pluto!
-		//new DP_Parallel();
 	}
 
 	function save_images_from_import( $post_id, $image_id ) {
@@ -191,7 +187,7 @@ class DP_REBS extends DP_Plugin {
 	function force_save_api_data() {
 		foreach( $this->api_data as $data ) {
 			$property = new DP_REBS_Property( $this->get_schema( 'property' ) );
-			if ( $data == false ) {
+			if ( $data === false ) {
 				// set id for mapping
 				$data['id'] = $this->api_id;
 				$property->set_data($data)->map_fields()->delete_object();
@@ -207,7 +203,7 @@ class DP_REBS extends DP_Plugin {
 		$expire = current_time( 'timestamp' ) + DAY_IN_SECONDS;
 		$data = get_transient( $name );
 
-		if ( $data == false ) {
+		if ( $data === false ) {
 			$api_schema = new DP_REBS_API();
 			$data = $api_schema->set_url( 'schema', $type )->call()->store()->return_data();
 			set_transient( $name, $data, $expire );
