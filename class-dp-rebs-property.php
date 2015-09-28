@@ -44,22 +44,20 @@ class DP_REBS_Property {
 
 	protected function map_fields() {
 
-		$taxonomies = new DP_REBS_Taxonomy_Mapping( $this->data, $this->fields );
-		$object = new DP_REBS_Post_Mapping( $this->data );
-
-		$this->taxonomy = $taxonomies->get_data();
-		$this->object = $object->get_data();
 		$this->images = $this->data['full_images'];
 		$this->sketches =  $this->data['sketches'];
-        $this->agent = $this->data['agent'];
+		$this->agent = $this->data['agent'];
 
-		$saved_fields = array();
-		$saved_fields = $saved_fields + $taxonomies->get_saved_fields();
-		$saved_fields = $saved_fields + $object->get_saved_fields();
-		$saved_fields = $saved_fields + array( 'full_images', 'sketches', 'agent' );
+		$taxonomies = new DP_REBS_Taxonomy_Mapping( $this->data, $this->fields );
+		$object = new DP_REBS_Post_Mapping( $this->data );
+		$exclude = $taxonomies->get_saved_fields() + $object->get_saved_fields() + array( 'full_images', 'sketches', 'agent' );
+		$meta = new DP_REBS_Meta_Mapping( $this->data, $this->fields, $exclude );
 
-		$meta = new DP_REBS_Meta_Mapping( $this->data, $this->fields, $saved_fields );
-
+		// multidimensional array with taxonomy names and actual term ids
+		$this->taxonomy = $taxonomies->get_data();
+		// array with data ready to save
+		$this->object = $object->get_data();
+		// array with data ready to save
 		$this->meta = $meta->get_data();
 
 		return $this;

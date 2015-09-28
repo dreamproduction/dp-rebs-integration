@@ -14,11 +14,7 @@ class DP_REBS_Meta_Mapping {
 
 		$this->excluded = $this->excluded + (array) $exclude;
 
-		$this->set_custom();
-		$this->set_maps();
-		$this->set_special();
-		$this->set_destination();
-		$this->set_common();
+		$this->set_custom()->set_maps()->set_special()->set_destination()->set_common();
 	}
 
 	public function get_data() {
@@ -36,6 +32,7 @@ class DP_REBS_Meta_Mapping {
 		$this->data['estate_property_size_unit'] = 'mp';
 
 		$this->excluded = $this->excluded + array( 'id', 'price_save', 'surface_built' );
+		return $this;
 	}
 	protected function set_maps() {
 		if ( $this->raw_data['lat'] && $this->raw_data['lng'] ) {
@@ -47,6 +44,7 @@ class DP_REBS_Meta_Mapping {
 
 			$this->excluded = $this->excluded + array( 'city', 'street', 'lat', 'lng' );
 		}
+		return $this;
 	}
 
 	protected function set_special() {
@@ -55,6 +53,7 @@ class DP_REBS_Meta_Mapping {
 
 			$this->excluded = $this->excluded + array( $key );
 		}
+		return $this;
 	}
 
 	protected function set_destination() {
@@ -64,6 +63,7 @@ class DP_REBS_Meta_Mapping {
 		}
 
 		$this->excluded = $this->excluded + array( 'destintion' );
+		return $this;
 	}
 
 	protected function set_common() {
@@ -76,6 +76,7 @@ class DP_REBS_Meta_Mapping {
 				$this->data[ 'estate_property_' . $key ] = (string) $value;
 			}
 		}
+		return $this;
 	}
 
 }

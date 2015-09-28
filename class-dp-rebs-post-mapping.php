@@ -8,11 +8,7 @@ class DP_REBS_Post_Mapping {
 	public function __construct( $data ) {
 		$this->raw_data = $data;
 
-		$this->set_title();
-		$this->set_content();
-		$this->set_time();
-		$this->set_status();
-		$this->set_old_id();
+		$this->set_title()->set_content()->set_time()->set_status()->set_old_id();
 	}
 
 	public function get_data() {

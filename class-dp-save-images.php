@@ -79,27 +79,19 @@ class DP_Save_Images {
 
 		if ( ! empty($url) && self::is_valid_image( $url ) ) {
 
-			$file_array = array();
-
-			// Set variables for storage
-			// fix file filename for query strings
-			preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $url, $matches);
-			$file_array['name'] = basename($matches[0]);
+			$file_array = self::set_file_array( $url );
 
 			if ( $id = self::is_stored_image( $file_array['name'] ) ) {
 				self::log('Image already storred: ' . $id . ' for parent: ' . $post_id);
 				return $id;
 			}
 
-
 			// Download file to temp location
 			$file_array['tmp_name'] = download_url( $url );
 
-			// If error storing temporarily, unlink
+			// If error storing temporarily, bail
 			if ( is_wp_error( $file_array['tmp_name'] ) ) {
-				@unlink($file_array['tmp_name']);
-				$file_array['tmp_name'] = '';
-				return false;
+				return 0;
 			}
 
 			// do the validation and storage stuff
@@ -114,6 +106,16 @@ class DP_Save_Images {
 		}
 
 		return 0;
+	}
+
+	static function set_file_array( $url ) {
+		// Set variables for storage
+		// fix file filename for query strings
+		preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $url, $matches );
+		$file_array = array();
+		$file_array['name'] = basename($matches[0]);
+
+		return $file_array;
 	}
 
 	/**
