@@ -171,7 +171,7 @@ class DP_REBS extends DP_Plugin {
 
 				$this->set_api_data_single( $this->api_id );
 				$this->save_api_data();
-				wp_die( __('Saved') );
+				wp_die( __('Saved'), __('OK') );
 				die;
 			} else {
 				wp_die( __('No property id') );

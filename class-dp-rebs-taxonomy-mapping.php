@@ -4,7 +4,7 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 
 	public function __construct( $data = array(), $mapping_data = array() ) {
 		parent::__construct( $data, $mapping_data );
-		$this->saved_fields = array( 'tags' ) + array( 'region', 'zone', 'city' ) + array( 'property_type' ) + array( 'for_rent', 'for_sale' );
+		$this->saved_fields = array_merge( array( 'tags' ), array( 'region', 'zone', 'city' ), array( 'property_type' ), array( 'for_rent', 'for_sale' ) );
 	}
 
 	public function map() {
@@ -47,7 +47,7 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 		);
 
 		// add if not exists with parent in slug, as wp-all-import does it
-		$zone_id = self::name_to_id( $city_name, 'property-location', array(
+		$zone_id = self::name_to_id( $zone_name, 'property-location', array(
 				'parent' => $city_id,
 				'slug' => sanitize_title( sprintf( '%s %s %s', $zone_name, $city_name, $region_name ) )
 			)
@@ -89,6 +89,8 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 	}
 
 	private static function name_to_id( $name, $taxonomy, $args = array() ) {
+		if ( ! $name )
+			return 0;
 		// if no parent required, we rather search by name, not by slug - with term_exists
 		if ( isset( $args['parent'] ) ) {
 			$term = term_exists( $name, $taxonomy, $args['parent'] );
@@ -100,7 +102,7 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 			$term = wp_insert_term( $name, $taxonomy, $args );
 
 		if ( $term && ! is_wp_error( $term ) )
-			return $term['term_id'];
+			return (int) $term['term_id'];
 
 		return 0;
 	}

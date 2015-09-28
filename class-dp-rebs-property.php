@@ -49,13 +49,14 @@ class DP_REBS_Property {
 	}
 
 	protected function set_id() {
-		if ( isset( $this->object['ID'] ) ) {
-			$this->id = $this->object['ID'];
+		$object_data = $this->object->get_data();
+		if ( isset( $object_data['ID'] ) ) {
+			$this->id = $object_data['ID'];
 		}
 	}
 
 	protected function get_saved() {
-		return $this->taxonomies->get_saved_fields() + $this->object->get_saved_fields() + array( 'full_images', 'sketches', 'agent' );
+		return array_unique( array_merge( $this->taxonomies->get_saved_fields(), $this->object->get_saved_fields(), array( 'full_images', 'sketches', 'agent' ) ) );
 	}
 
 	protected function map_fields() {
@@ -76,9 +77,6 @@ class DP_REBS_Property {
 	public function save_object() {
 		// actual insert. returns 0 on failure
 		$this->id = wp_insert_post( $this->object->get_data(), false );
-
-		// save ID as early as possible to avoid duplicates
-		add_post_meta( $this->id, 'estate_property_id', $this->meta['estate_property_id'], true );
 
 		return $this;
 	}

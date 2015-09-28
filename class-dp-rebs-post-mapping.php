@@ -4,7 +4,7 @@ class DP_REBS_Post_Mapping extends DP_REBS_Mapping {
 
 	public function __construct( $data = array(), $mapping_data = array() ) {
 		parent::__construct( $data, $mapping_data );
-		$this->saved_fields = array( 'title' ) + array( 'description' ) + array( 'date_added', 'date_modified_by_user' );
+		$this->saved_fields = array_merge( array( 'title' ), array( 'description' ), array( 'date_added', 'date_modified_by_user' ) );
 	}
 
 	public function map() {
