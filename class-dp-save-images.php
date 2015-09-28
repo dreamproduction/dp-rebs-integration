@@ -4,28 +4,22 @@ class DP_Save_Images {
 
 	protected $data = array();
 
-	public function __construct( $name, $later_name = 'dp_later' ) {
-		$this->name = $name;
-		$this->later_name = $later_name;
-		$this->later_actions = array();
-
-		$this->set_data();
-	}
-
 	public function add( $url, $parent_id, $index = null ) {
 		// put key the filename for easier array_unique
 		$parts = parse_url( $url );
 		$key = basename( $parts['path'] );
 		$this->data[$key] = array( 'key' => $key, 'url' => $url, 'parent_id' => $parent_id, 'index' => $index );
-		$this->later_actions[$key] = array( __CLASS__, 'save', $this->name, $this->data[$key] );
 		return $this;
 	}
 
 	public function remove( $key ) {
 		unset( $this->data[$key] );
-		$this->store_data();
 
 		return $this;
+	}
+
+	public function get( $key ) {
+		return $this->data[$key];
 	}
 
 	public function save( $element ) {
@@ -35,49 +29,20 @@ class DP_Save_Images {
 			return $this;
 		}
 
-		$this->remove( $element['key'] );
-
 		$image_id = self::import_external_image( $element['url'], $element['parent_id'] );
-
-        if ( $image_id && ! has_post_thumbnail( $element['parent_id'] ) ) {
-            set_post_thumbnail( $element['parent_id'], $image_id );
-        }
 
 		if ( ! $image_id ) {
 			self::log( 'no image id, image not imported' );
-			return $this;
 		}
 
-		// will always return array
-        $previous_images = get_post_meta( $element['parent_id'], $this->name, true );
-
-		if ( empty( $previous_images ) )
-			$previous_images = array();
-
-		// make a copy for extra checks
-		$new_images = $previous_images;
-		// use array_search instead of in_array for indexing later
-		$pos_old_images = array_search( $image_id, $previous_images );
-
-		// just position is changed, unset old pos
-        if ( $pos_old_images !== false ) {
-	        unset( $new_images[$pos_old_images] );
-        }
-
-		// save with position if needed
-		if ( $element['index'] )
-			$new_images[$element['index']] = $image_id;
-		else
-			$new_images[] = $image_id;
-
-		update_post_meta( $element['parent_id'], $this->name, $new_images, $previous_images );
+		$this->data[ $element['key'] ]['id'] = $image_id;
 
 		self::log( sprintf( "Save image %s to parent %d", $element['url'], $element['parent_id'] ) );
 
 		return $this;
 	}
 
-	public function save_now() {
+	public function save_all() {
 		foreach ( $this->data as $element ) {
 			set_time_limit(60);
 			$this->save( $element );
@@ -85,30 +50,13 @@ class DP_Save_Images {
 		return $this;
 	}
 
-	function save_later() {
-		$later_actions = get_option( $this->later_name, array() );
-		foreach ( $this->later_actions as $key => $action ) {
-			$later_actions[$key] = $action;
+	public function get_ids() {
+		$ids = array();
+		foreach ( $this->data as $element ) {
+			if ( isset($element['id']) && $element['id'] )
+				$ids[$element['index']] = $element['id'];
 		}
-		update_option( $this->later_name, $later_actions );
-
-		return $this;
-	}
-
-	public function store_data() {
-		// prefix option
-		update_option( 'dp' . $this->name, $this->data );
-		return $this;
-	}
-
-	public function set_data() {
-		// prefix option
-		$this->data = get_option( 'dp' . $this->name, array() );
-		return $this;
-	}
-
-	public function get_data() {
-		return $this->data;
+		return $ids;
 	}
 
 	/**
@@ -159,13 +107,13 @@ class DP_Save_Images {
 			// If error storing permanently, unlink
 			if ( is_wp_error($id) ) {
 				@unlink($file_array['tmp_name']);
-				return false;
+				return 0;
 			}
 
 			return $id;
 		}
 
-		return false;
+		return 0;
 	}
 
 	/**

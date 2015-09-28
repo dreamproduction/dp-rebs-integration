@@ -500,13 +500,22 @@ class DP_REBS_Property {
 			return $this;
 		}
 
-		$images = new DP_Save_Images( 'estate_property_gallery' );
+		$images = new DP_Save_Images();
+		$count = 1;
 
 		foreach ( $this->images as $index => $image_url ) {
+			if ( $count > 25 )
+				continue;
 			$images->add( $image_url, $this->id, $index );
+			$count++;
 		}
+		$images->save_all();
 
-		$images->store_data()->save_now();
+		$ids = $images->get_ids();
+
+		update_post_meta( $this->id, 'estate_property_gallery', $ids );
+
+		set_post_thumbnail( $this->id, reset( $ids ) );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->images ) );
 		$this->log( $message );
@@ -523,13 +532,16 @@ class DP_REBS_Property {
 			return $this;
 		}
 
-		$images = new DP_Save_Images( 'estate_property_sketches' );
+		$images = new DP_Save_Images();
 
-		foreach ( $this->sketches as $image_url ) {
-			$images->add( $image_url, $this->id );
+		foreach ( $this->sketches as $index => $image_url ) {
+			$images->add( $image_url, $this->id, $index );
 		}
+		$images->save_all();
 
-		$images->store_data()->save_now();
+		$ids = $images->get_ids();
+
+		update_post_meta( $this->id, 'estate_property_sketches', $ids );
 
 		$message = sprintf( '%s, Time - %s, Objects - %s, Exit', __METHOD__, timer_stop(), count( $this->sketches ) );
 		$this->log( $message );
@@ -547,7 +559,6 @@ class DP_REBS_Property {
 	 * @param string $message
 	 */
 	function log( $message ) {
-		return;
 
 		if ( defined('WP_DEBUG') && WP_DEBUG == true ) {
 			$upload_dir = wp_upload_dir();
