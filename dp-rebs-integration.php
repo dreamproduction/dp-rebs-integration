@@ -83,7 +83,6 @@ class DP_REBS extends DP_Plugin {
 				// send ID in case data is false (deleted property)
 				$this->save_api_data( $property_id );
 				wp_die( __('Saved'), __('OK') );
-				die;
 			} else {
 				wp_die( __('No property id') );
 			}
