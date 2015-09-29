@@ -123,9 +123,9 @@ class DP_REBS extends DP_Plugin {
 			array(
 				'post_type' => 'property',
 				'suppress_filters' => false,
-				'meta_key' => 'estate_property_id',
+				'posts_per_page' => 1,
+				'post_status' => 'publish',
 				'meta_value' => $m_id,
-				'posts_per_page' => 1
 			)
 		);
 
