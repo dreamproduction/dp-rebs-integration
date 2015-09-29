@@ -41,15 +41,13 @@ class DP_REBS_Post_Mapping extends DP_REBS_Mapping {
 				'post_type' => 'property',
 				'suppress_filters' => false,
 				'posts_per_page' => 1,
-				'post_status' => 'any',
-				'meta_query' => array(
-					'value' => 'CP' . $this->raw_data['id'],
-					'compare' => '='
-				)
+				'post_status' => 'publish',
+				'meta_value' => 'CP' . $this->raw_data['id'],
 			)
 		);
 
-		$this->data['ID'] = $old->post->ID;
+		if ( $old->found_posts == '1' )
+			$this->data['ID'] = $old->post->ID;
 
 		return $this;
 	}

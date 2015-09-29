@@ -3,11 +3,11 @@
 class DP_REBS_Property {
 	protected $fields = array();
 	protected $schema = array();
-	protected $data;
+	protected $data = array();
 
-	protected $object = array();
-	protected $meta = array();
-	protected $taxonomies = array();
+	protected $object;
+	protected $meta;
+	protected $taxonomies;
 	public $id = 0;
 
 	public function __construct( $schema ) {
