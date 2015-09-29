@@ -19,25 +19,16 @@ class DP_REBS_API {
 	function set_url( $mode, $data = '' ) {
 		switch ( $mode ) {
 			case 'single' :
-				$url_part = isset( $data ) ? absint( $data ) : 0;
-				$this->url = $this->base . 'api/public/property/';
-				$this->url .= $url_part;
+				$this->set_single_url( $data );
 				break;
 			case 'agent' :
-				$url_part = isset( $data ) ? absint( $data ) : 0;
-				$this->url = $this->base . 'api/public/agent/';
-				$this->url .= $url_part;
+				$this->set_agent_url( $data );
 				break;
 			case 'list_since' :
-				$url_args = isset( $data ) ? array( 'date_modified_by_user__gte' => $data ) : array();
-				$this->url = $this->base . 'api/public/property/';
-				$this->url = add_query_arg( $url_args, $this->url );
+				$this->set_since_url( $data );
 				break;
 			case 'schema' :
-				$url_part = isset( $data ) ? $data : '';
-				$this->url = $this->base . 'api/public/';
-				$this->url .= $url_part;
-				$this->url .= '/schema/';
+				$this->set_schema_url( $data );
 				break;
 			default :
 				$this->url = $mode;
@@ -47,6 +38,30 @@ class DP_REBS_API {
 		$this->url = add_query_arg( 'format', 'json', $this->url	);
 
 		return $this;
+	}
+
+	protected function set_single_url( $data = 0 ) {
+		$url_part = absint( $data );
+		$this->url = $this->base . 'api/public/property/';
+		$this->url .= $url_part;
+	}
+
+	protected function set_agent_url( $data = 0 ) {
+		$url_part = absint( $data );
+		$this->url = $this->base . 'api/public/agent/';
+		$this->url .= $url_part;
+	}
+
+	protected function set_since_url( $data = '' ) {
+		$url_args = ! empty( $data ) ? array( 'date_modified_by_user__gte' => $data ) : array();
+		$this->url = $this->base . 'api/public/property/';
+		$this->url = add_query_arg( $url_args, $this->url );
+	}
+
+	protected function set_schema_url( $data = '' ) {
+		$this->url = $this->base . 'api/public/';
+		$this->url .= $data;
+		$this->url .= '/schema/';
 	}
 
 	function store() {
@@ -91,23 +106,6 @@ class DP_REBS_API {
 		}
 
 		return $this;
-	}
-
-	function clear() {
-		$this->data = array();
-		return $this;
-	}
-
-	function return_ids() {
-		$ids = array();
-		foreach ( (array) $this->data as $object ) {
-			$ids[] = $object->id;
-		}
-		return $ids;
-	}
-
-	function return_url() {
-		return $this->url;
 	}
 
 	function return_data() {
