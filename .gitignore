@@ -1,14 +1,3 @@
-wp-content/gallery
-wp-content/gd-star-rating
-wp-content/uploads
-wp-content/blogs.dir
-wp-config.php
-wp-cache-config.php
-advanced-cache.php
-humans.txt
-cache
-error_log
-*.md
 *.swp
 *.log
 *.cache
@@ -21,3 +10,4 @@ scss/.sass-cache/
 bower_components/*
 node_modules/*
 src/tmp
+cache

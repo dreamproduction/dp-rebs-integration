@@ -2,8 +2,8 @@
 
 /*
 Plugin Name: DP REBS Integration
-Plugin URI: http://dreamproduction.com/wordpress-plugins/dp-rebs-integration
-Description: Get properties and values from REBS API.
+Plugin URI: https://github.com/dreamproduction/dp-rebs-integration
+Description: Sync properties and values from REBS API.
 Version: 1.0
 Author: Dream Production
 Author URI: http://dreamproduction.com
