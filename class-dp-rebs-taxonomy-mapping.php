@@ -4,7 +4,7 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 
 	public function __construct( $data = array(), $mapping_data = array() ) {
 		parent::__construct( $data, $mapping_data );
-		$this->saved_fields = array_merge( array( 'tags' ), array( 'region', 'zone', 'city' ), array( 'property_type' ), array( 'for_rent', 'for_sale' ) );
+		$this->saved_fields = array_merge( array( 'tags' ), array( 'region', 'zone', 'city' ), array( 'property_type' ), array( 'for_rent', 'for_sale' ), array(  'residential_complex' ) );
 	}
 
 	public function map() {
@@ -12,6 +12,7 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 		$this->set_location();
 		$this->set_status();
 		$this->set_type();
+		$this->set_project();
 	}
 
 	protected function set_features() {
@@ -85,6 +86,16 @@ class DP_REBS_Taxonomy_Mapping extends DP_REBS_Mapping {
 
 		foreach ( $term_names as $term_name ) {
 			$this->data['property-type'][] = self::name_to_id( $term_name, 'property-type' );
+		}
+	}
+
+	protected function set_project() {
+
+		$complex = $this->raw_data['residential_complex'];
+
+		if ( $complex && is_array( $complex ) ) {
+			$complex_slug = sprintf( 'residential-%s', $complex['id'] );
+			$this->data['residential-project'][] = self::name_to_id( $complex['name'], 'residential-project', array( 'slug' => $complex_slug ) );
 		}
 	}
 
